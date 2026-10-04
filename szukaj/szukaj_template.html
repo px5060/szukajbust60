@@ -307,7 +307,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.0.1';
+const APP_VER = '1.1.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -329,6 +329,8 @@ const defR = () => ({ rules: CFG.defRules, minCyc: CFG.minCyc, minBust: CFG.minB
 let R = (() => { try { const r = JSON.parse(lsGet(LSK.rules, '')); if (r && r.rules) {
   if (!r.rules.some(x => x[0] === null)) r.rules.push(CFG.defRules.find(x => x[0] === null) || [null, 11]);
   return Object.assign(defR(), r, { gap: CFG.gap, split: CFG.split }); } } catch (e) {} return defR(); })();
+const KSTEPS = [2, 3, 4, 5, 6, 7];   // kroki do wyboru na GRA (jak k5–k7 w SZUKAJ)
+let KS = (() => { try { const v = JSON.parse(lsGet(LSK.ks, '')); if (Array.isArray(v)) return v.filter(k => KSTEPS.includes(k)); } catch (e) {} return [5, 6, 7]; })();
 let afterOnly = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_gra_only') === '1'; } catch (e) { return false; } })();   // GRA: tylko GRA na następnym
 let view = 'gra', busy = false, searching = null, bandCap = {};
 let onlyMine = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_onlymine') === '1'; } catch (e) { return false; } })();   // GRA: tylko MOJE MODELE
@@ -590,7 +592,7 @@ function topCyc() { return Math.max(0, ...R.rules.filter(r => r[0] !== null).map
 const isTop = r => R.rules.some(x => x[0] === null) && r.nw + r.nbu > topCyc();
 function qual(r) { const cyc = r.nw + r.nbu; if (cyc < R.minCyc || r.nbu < R.minBust || r.cl > R.maxClose) return false; const l = limitFor(cyc); return l !== null && r.nbu <= l; }
 const afterB = r => r.sinceB === 0;   // ostatni zakończony cykl = BUST → trwa cykl zaraz po BUST-cie
-const showGra = r => qual(r) && afterB(r) && BANDS.includes(bandOf(r));
+const showGra = r => qual(r) && afterB(r) && KS.includes(r.bs + 1) && BANDS.includes(bandOf(r));
 function rankKey(r) { const c = r.nw + r.nbu; return (isTop(r) ? 0 : 1) + r.pb + r.nbu / c - c * 1e-6; }
 
 // grupy wg cykli = wiersze reguł (do 200 / do 300 / do 400 / ponad 400); kolejność na ekranie: od najdłuższych
@@ -608,7 +610,7 @@ function playLists() {   // modele w kryteriach, które są w cyklu zaraz po BUS
   const out = lastEval.out, B = R.rules.map(() => []), pre = [];
   const mine = new Set(getMy().map(myIndex).filter(k => k >= 0));
   out.forEach((r, k) => {
-    if (!qual(r) || !afterB(r) || mine.has(k)) return;
+    if (!qual(r) || !afterB(r) || !KS.includes(r.bs + 1) || mine.has(k)) return;
     B[bandOf(r)].push(k);
   });
   const po = { gra: 0, czeka: 1, trig: 2, wait: 3 };
@@ -656,7 +658,8 @@ function renderGra() {
   const n = codes.length;
   if (!lastEval) return `<div class="ban idle">Liczę ${P.length.toLocaleString('pl')} modeli…</div>`;
   const out = lastEval.out, { B } = playLists();
-  let qn = 0, an = 0; out.forEach(r => { if (qual(r)) { qn++; if (afterB(r)) an++; } });
+  let qn = 0, an = 0; const perK = {}; KSTEPS.forEach(k => perK[k] = 0);
+  out.forEach((r, k) => { if (qual(r)) { qn++; if (afterB(r)) { an++; if (perK[r.bs + 1] !== undefined && !isMine(k) && BANDS.includes(bandOf(r))) perK[r.bs + 1]++; } } });
   const my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0);
   const myOn = my.filter(x => !myResult(x.g, out[x.k]));
   const graAll = (onlyMine ? [] : [].concat(...B.filter((_, i) => BANDS.includes(i))).filter(k => phaseOf(out[k]) === 'gra'))
@@ -664,8 +667,9 @@ function renderGra() {
   const sum = graAll.reduce((s, k) => s + ST[out[k].bs], 0);
   let h = graAll.length
     ? `<div class="ban bet"><div class="big">NASTĘPNY WIERSZ (w.${n + 1}) = GRA na ${tgt}</div><div class="sub">${graAll.length} model(i) w cyklu po BUST-cie · suma stawek ${sum} zł${busy ? ' · przeliczam…' : ''}</div></div>`
-    : `<div class="ban idle">w.${n + 1}: brak zakładu modeli po BUST-cie${busy ? ' · przeliczam…' : ''}</div>`;
+    : `<div class="ban idle">w.${n + 1}: brak zakładu modeli po BUST-cie na krokach ${KS.length ? KS.map(k => 'k' + k).join(', ') : '— wybierz krok'}${busy ? ' · przeliczam…' : ''}</div>`;
   h += lastCodes();
+  h += `<div class="flt"><span>krok:</span>${KSTEPS.map(k => `<button class="chip ${KS.includes(k) ? 'on' : ''}" data-k="${k}">k${k} ${ST[k - 1]} zł · ${perK[k]}</button>`).join('')}</div>`;
   h += `<div class="flt"><span>widok:</span><button class="chip ${afterOnly ? 'on' : ''}" data-only="1">tylko GRA na następnym · ${graAll.length}</button>` +
     `<button class="chip mine ${onlyMine ? 'on' : ''}" data-mine="1">▶ MOJE MODELE · ${my.length}</button></div>`;
   const shown = i => R.rules[i][0] !== null || B[i].length > 0;
@@ -673,7 +677,7 @@ function renderGra() {
   if (onlyMine) h += `<div class="note"><b>MOJE MODELE</b> — tylko modele, które grasz (${myOn.length} w grze${my.length > myOn.length ? `, ${my.length - myOn.length} zakończone` : ''}). Dotknij „▶ MOJE MODELE” jeszcze raz, żeby wrócić do wszystkich.</div>` +
     (my.length ? '' : `<div class="empty" style="padding:10px 4px">Nie grasz jeszcze żadnego modelu. Przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`);
   else h += `<div class="note">W kryteriach: <b>${qn.toLocaleString('pl')}</b> z ${P.length.toLocaleString('pl')} modeli (min ${R.minCyc} cykli, min ${R.minBust} BUST, BUST od razu po BUST-cie max ${R.maxClose}×).
-    <b>Tuż po BUST-cie: ${an}</b> — ich ostatni cykl skończył się BUST-em, a teraz trwa następny cykl (gra od kroku 1 do WIN albo kroku 8). W grupach wg liczby cykli, najbliższa gra pierwsza. Dotknij karty → TABELA.</div>`;
+    <b>Tuż po BUST-cie: ${an}</b> — ich ostatni cykl skończył się BUST-em, a teraz trwa następny cykl. Niżej tylko modele na wybranych krokach (${KS.length ? KS.map(k => 'k' + k).join(', ') : 'żaden'}) — wchodzisz od tego kroku do WIN albo kroku 8. W grupach wg liczby cykli, najbliższa gra pierwsza. Dotknij karty → TABELA.</div>`;
   if (my.length) h += myCardsHtml(out, my, myOn);
   for (const i of bandOrder()) {
     if (onlyMine) break;
@@ -682,7 +686,7 @@ function renderGra() {
     const cnt = { gra: 0, czeka: 0, trig: 0, wait: 0 }; B[i].forEach(k => cnt[phaseOf(out[k])]++);
     let s = `<div class="sec${isStar ? ' star' : ''}"><div class="sh"><b>${bandName(i)}</b><span class="m">${B[i].length} po BUST-cie</span></div>
       <div class="hint" style="margin:-2px 2px 6px">GRA na następnym ${cnt.gra} · zakład ustawiony ${cnt.czeka} · STEP otwarty ${cnt.trig} · czekam na STEP ${cnt.wait}</div>`;
-    if (!L.length) s += `<div class="empty">${afterOnly ? 'żaden model z tej grupy nie gra na następnym wierszu' : 'teraz żaden model z tej grupy nie jest tuż po BUST-cie'}</div>`;
+    if (!L.length) s += `<div class="empty">${afterOnly ? 'żaden model z tej grupy nie gra na następnym wierszu' : 'teraz żaden model z tej grupy nie jest tuż po BUST-cie na wybranych krokach'}</div>`;
     L.slice(0, cap).forEach(k => s += card(k, P[k], out[k], phaseOf(out[k])));
     if (L.length > cap) s += `<button class="btn more" data-more="${i}">Pokaż więcej z tej grupy (${L.length - cap})</button>`;
     h += s + '</div>';
@@ -716,7 +720,7 @@ function explainHtml(m) {
     <li><b>STEP</b> — czekaj, aż wypadną ${step}.</li>
     <li><b>TRIGGER</b> — od wiersza po STEP czekaj na ${trig}. Inne kody po drodze nic nie zmieniają.</li>
     <li><b>ZAKŁAD</b> — ${gap}. Grasz na <b>${tgt}</b>, stawka z progresji 8 · 8 · 16 · 32 · <b>64 · 128 · 256</b> · 512 zł.</li>
-    <li><b>Wersja A (SZUKAJ BUST)</b> — grasz tylko <b>cykl zaraz po BUST-cie</b> (od kroku 1 do WIN albo kroku 8). Ryzyko = BUST od razu po BUST-cie; model w kryteriach miał takich powtórek najwyżej ${R.maxClose}.</li>
+    <li><b>Wersja A (SZUKAJ BUST)</b> — grasz tylko <b>cykl zaraz po BUST-cie</b>, wchodząc na wybranym kroku (domyślnie k5–k7, jak w SZUKAJ) do WIN albo kroku 8. Ryzyko = BUST od razu po BUST-cie; model w kryteriach miał takich powtórek najwyżej ${R.maxClose}.</li>
     <li><b>Po zakładzie</b> wszystko od nowa: znowu czekasz na STEP${sp.length === 2 ? ' (kod z wiersza zakładu może już być 1. kodem nowego STEP-u)' : ' (liczony od wiersza po zakładzie)'}. WIN → progresja wraca na krok 1; przegrana → następny krok (zostaje do kolejnego zakładu); przegrana na kroku 8 = BUST.</li>
   </ol></div>`;
 }
@@ -922,7 +926,7 @@ function renderTab() {
     else next = 'czekam na STEP';
     if (r.ph !== 2 || r.wz !== n) { const mb = minToBet(m, r); if (mb) next += r.ph === 2 ? ` — za ${mb.d}` : ` · najwcześniej GRA na w.${n + mb.d} (za ${mb.d})`; }
   }
-  const myNext = r && r.ph === 2 && r.wz === n && afterB(r) && qual(r);
+  const myNext = r && r.ph === 2 && r.wz === n && afterB(r) && KS.includes(r.bs + 1) && qual(r);
   const nextRow = `<tr class="nextr" id="nextRow"><td class="nr">${n + 1}</td><td class="kd">?</td><td class="g ${myNext ? 'my' : 'dim'}">${myNext ? 'GRA ' + ST[r.bs] : ''}</td><td><span class="lab Lnext">następny: ${esc(next)}</span></td></tr>`;
   const R2 = [];
   let shown = 0, i = n - 1;
@@ -932,7 +936,7 @@ function renderTab() {
     const nb = i + 1 < n && lab.K[i + 1] >= 6 && lab.K[i + 1] <= 8;      // następny wiersz = zakład
     const na = nb ? lab.A[i + 1] : 0;
     let g = '', gc = 'dim';
-    if (K >= 6 && K <= 8) { const my = (lab.Q[i] & 3) === 3; g = (my ? 'GRA ' : 'k' + a + ' ') + ST[a - 1]; gc = my ? 'my' : 'dim'; }
+    if (K >= 6 && K <= 8) { const my = (lab.Q[i] & 3) === 3 && KS.includes(a); g = (my ? 'GRA ' : 'k' + a + ' ') + ST[a - 1]; gc = my ? 'my' : 'dim'; }
     R2.push(`<tr data-i="${i}" class="${i >= SEED_N ? 'nw' : ''}${nb ? ' pre' : ''}"><td class="nr">${i + 1}</td><td class="kd ${isHit(codes[i]) ? 'h' : ''}">${codes[i]}</td><td class="g ${gc}">${g}</td><td>` +
       (nb ? (w => `<span class="lab Lnx">▶ NASTĘPNY WIERSZ = GRA k${na} ${ST[na - 1]} zł na ${tgt}<span class="s">dlaczego: ${esc(w.trig)} · ${esc(w.stake)}</span><span class="s tp">👆 dotknij — podświetlę STEP i TRIGGER tej gry</span></span>`)(betWhy(i + 1)) : '') +
       `<span class="lab ${c[0]}">${c[1]}<span class="s">${esc(c[2] || '')}</span></span></td></tr>`);
@@ -1022,6 +1026,9 @@ function render() {
     const mb = $('moreBtn'); if (mb) mb.onclick = () => { const h0 = document.documentElement.scrollHeight, y0 = scrollY; tabN += 150; render(); if (tabAsc) scrollTo(0, y0 + document.documentElement.scrollHeight - h0); };
   }
   if (view === 'gra') {
+    el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+      const k = +b.dataset.k; KS = KS.includes(k) ? KS.filter(x => x !== k) : [...KS, k].sort((a, b) => a - b); lsSet(LSK.ks, JSON.stringify(KS)); render();
+    });
     el.querySelectorAll('[data-only]').forEach(b => b.onclick = () => { afterOnly = !afterOnly; try { localStorage.setItem(CFG.app + '_szbust_v1_gra_only', afterOnly ? '1' : '0'); } catch (e) {} render(); });
     el.querySelectorAll('[data-mine]').forEach(b => b.onclick = () => { onlyMine = !onlyMine; try { localStorage.setItem(CFG.app + '_szbust_v1_onlymine', onlyMine ? '1' : '0'); } catch (e) {} render(); scrollTo(0, 0); });
     el.querySelectorAll('[data-b]').forEach(b => b.onclick = () => {

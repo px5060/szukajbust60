@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1f2a">
+<title>__TITLE__</title>
+<link rel="manifest" href="szukaj.webmanifest">
+<link rel="icon" href="szukaj-192.png">
+<link rel="apple-touch-icon" href="szukaj-192.png">
+<meta name="apple-mobile-web-app-title" content="__TITLE__">
+<style>
+:root{--bg:#12151c;--pan:#1b1f2a;--card:#242a38;--bd:#323a4d;--tx:#e8ebf2;--mu:#8b93a7;--or:#ff6600;--or2:#ff9a4d;--gr:#5fd38a;--rd:#ff8a8a;--bl:#9fc4ff;--btn:#5ec8f2;--btn2:#9fdcf7;--btntx:#062433}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{position:sticky;top:0;z-index:10;background:var(--pan);border-bottom:1px solid var(--bd);padding:8px 12px 8px}
+header .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+header h1{font-size:15px;margin:0}
+header .n{color:var(--mu);font-size:12px}
+.btn.back{display:block;width:100%;margin-top:7px;padding:7px 10px;font-size:13px;background:#2b3245;border-color:#3d4760;text-align:left}
+.erow{display:flex;gap:6px;margin-top:7px}
+.erow input{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:9px 10px;font-size:17px;letter-spacing:2px}
+.btn{background:#1f3442;border:1px solid #3a6680;color:#d8f1fc;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:600}
+.btn.pri{background:var(--btn);border-color:var(--btn);color:var(--btntx)}
+.btn:disabled{opacity:.5}
+.hint{color:var(--mu);font-size:11.5px;margin-top:5px}
+.tgt{display:flex;gap:6px;margin-top:7px}
+.chip{background:#1f3442;border:1px solid #3a6680;color:var(--tx);border-radius:16px;padding:5px 11px;font-size:13px;font-weight:600}
+.chip.on{background:var(--btn);border-color:var(--btn);color:var(--btntx)}
+main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
+.ban{border-radius:10px;padding:9px 12px;margin-bottom:8px;font-weight:700}
+.ban.bet{background:var(--or);color:#fff}.ban.idle{background:var(--card);font-weight:500}
+.ban .big{font-size:16px}.ban .sub{font-weight:500;font-size:12px;margin-top:3px;opacity:.95}
+.last{display:flex;gap:5px;flex-wrap:wrap;margin:2px 0 10px;color:var(--mu);font-size:12px;align-items:center}
+.last b{color:var(--tx);background:var(--card);border-radius:5px;padding:2px 6px;font-variant-numeric:tabular-nums}
+.last b.h{background:#2b4a37}
+.sec{background:var(--pan);border:1px solid var(--bd);border-radius:10px;padding:8px;margin-bottom:10px}
+.sh{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 6px;font-size:13px;gap:8px}
+.sh b{font-size:14px}.sh .m{color:var(--mu);font-size:12px}
+.mc{border-left:5px solid var(--bd);background:var(--card);border-radius:8px;padding:7px 9px;margin-bottom:6px}
+.mc.k5{border-left-color:#2e75b6}.mc.k6{border-left-color:#7030a0}.mc.k7{border-left-color:var(--or)}
+.mc{cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.mc.hold{filter:brightness(1.35)}
+.respop{position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translate(-50%,-140%);transition:transform .3s;z-index:60;width:min(94vw,560px);border-radius:12px;padding:10px 14px;color:#fff;box-shadow:0 8px 30px #000a;cursor:pointer}
+.respop.in{transform:translate(-50%,0)}.respop.win{background:#1f8a4c}.respop.loss{background:#b3261e}
+.respop .rp-h{font-size:22px;font-weight:900}.respop .rp-s{font-size:13.5px;margin-top:2px}.respop .rp-l{margin-top:6px;font-size:12.5px;max-height:40vh;overflow:auto}
+.respop .rp-i{padding:2px 0;border-top:1px solid #ffffff33}.respop .rp-x{font-size:11px;opacity:.75;margin-top:5px;text-align:right}
+.pop{position:fixed;inset:0;z-index:50;background:#000b;display:flex;align-items:flex-end;justify-content:center}
+.pop .sheet{width:100%;max-width:760px;max-height:88vh;overflow:auto;background:var(--pan);border-top:3px solid var(--or);border-radius:14px 14px 0 0;padding:12px 14px 24px}
+.pop h3{margin:0 0 2px;font-size:18px}.pop .hs{color:var(--mu);font-size:12.5px;margin-bottom:6px}.pop .x{float:right;background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:4px 10px;font-size:15px}
+.spnow{background:var(--card);border-radius:8px;padding:6px 9px;font-size:13px;margin:6px 0}
+.flt{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin:0 0 8px}.flt span{color:var(--mu);font-size:12px;width:44px}
+.flt .chip{padding:4px 10px;font-size:12.5px}
+.flt .chip.mine{border-color:var(--btn);color:var(--btn2)}.flt .chip.mine.on{background:var(--btn);color:var(--btntx)}
+.sec.star{border-color:#ffd34d}
+.sec.mine{border-color:var(--or);box-shadow:0 0 0 1px var(--or) inset}
+.myh{color:var(--or2);font-size:12px;font-weight:700;margin-top:2px}
+.mc.msel{box-shadow:0 0 0 2px var(--or) inset}
+.mc.mwin{border-left-color:#5fd38a}.mc.mbust{border-left-color:#ff6666}
+.st.pw{background:#C6EFCE;color:#006100}.st.pb{background:#FF6666;color:#fff}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:13px;margin-top:8px}
+.stats .k{color:var(--mu)}.stats .v{font-weight:700;text-align:right}.stats .v .n{font-weight:500;color:var(--mu);font-size:12px;display:block}.stats b.bad{color:var(--rd)}.stats b.ok{color:var(--gr)}
+.seq{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}.seq i{font-style:normal;font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 5px;background:#C6EFCE;color:#006100}.seq i.b{background:#FF6666;color:#fff}
+.btn.play{display:block;width:100%;margin-top:8px;background:var(--btn);border-color:var(--btn);color:var(--btntx);font-size:15px}
+.btn.playing{display:block;width:100%;margin-top:8px;background:#2b3245}
+.mini{background:var(--card);border-radius:7px;padding:6px 9px;margin-bottom:4px;font-size:12.5px;color:#c9cfdc;cursor:pointer}
+.ver{color:var(--mu);font-size:11px;margin-left:6px}
+.upd{background:#2e75b6;color:#fff;border-radius:10px;padding:9px 12px;margin-bottom:8px;font-weight:700;cursor:pointer}
+.btn.inst{display:none;width:100%;margin-top:6px;background:#2b4a37;border-color:#3b6a4d}.mc .tapt{color:var(--or2);font-size:11px;font-weight:700;margin-top:3px}
+.mc .h{display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+.mc .id{font-weight:800;font-size:15px;white-space:nowrap}
+.mc .stk{font-weight:800;white-space:nowrap}
+.mc .top{background:#ffd34d;color:#3a2a00;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:800;vertical-align:2px}
+.mc.ktop{box-shadow:0 0 0 1.5px #ffd34d inset}
+.mc .rule{color:var(--mu);font-size:12px;margin-top:2px;word-break:break-word}
+.st{margin-top:5px;padding:6px 8px;border-radius:7px;font-weight:700;font-size:13px}
+.st .s{display:block;font-weight:500;font-size:11.5px;opacity:.85;margin-top:1px}
+.st.p1{background:var(--or);color:#fff;box-shadow:0 0 0 2px #fff inset;font-size:14px}
+.st.p2{background:rgba(255,102,0,.18);color:#ffcfa8;border:1.5px dashed var(--or)}
+.st.p3{background:#DEEBF7;color:#1F4E78}
+.st.p6{background:var(--pan);color:var(--mu);font-weight:500}
+.meta{margin-top:5px;color:var(--mu);font-size:12px;display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.pos{color:var(--gr);font-weight:700}.neg{color:var(--rd);font-weight:700}
+.empty{color:var(--mu);font-size:13px;padding:6px 4px}
+.more{display:block;width:100%;margin-top:4px}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:var(--pan);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--mu);padding:12px 0;font-size:14px;font-weight:700}
+nav button.on{color:var(--btn)}
+table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{padding:5px 4px;border-bottom:1px solid var(--bd);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mu);font-weight:600}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px}
+.kv span:nth-child(odd){color:var(--mu)}
+.note{background:var(--pan);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:12.5px;color:#c9cfdc}
+.note b{color:var(--tx)}
+.rules input{width:64px;background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:5px;font-size:14px}
+.rules td,.rules th{text-align:left}
+.bar{height:6px;background:var(--card);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--or);width:0}
+.tbl td,.tbl th{text-align:left;vertical-align:top}
+.tbl td.nr{color:var(--mu);white-space:nowrap;width:1%}.tbl td.kd{font-weight:700;width:1%}
+.tbl td.kd.h{color:var(--gr)}
+.tbl td.g{white-space:nowrap;width:1%;font-weight:700}
+.tbl td.g.my{background:var(--or);color:#fff;border-radius:4px}
+.tbl td.g.dim{color:var(--mu);font-weight:500}
+.tbl tr.nw td.nr::after{content:' •';color:var(--or2)}
+.lab{display:inline-block;border-radius:4px;padding:1px 6px;font-size:12px}
+.lab .s{display:block;font-size:11px;font-weight:500;opacity:.85;margin-top:1px}
+.L0 .s,.L1 .s{opacity:.75}.L4b{background:#FBE3D3;color:#000}
+.Lnx{background:var(--or);color:#fff;font-weight:800;display:block;margin-bottom:3px}.Lnx .s{opacity:.95;font-weight:600}
+.asc .tbl tr.pre td{border-bottom:2px solid var(--or)}.desc .tbl tr.pre td{border-top:2px solid var(--or)}
+.tbl tr.nextr td{border-top:2px solid #7030A0}
+.tbl tr[data-i]{cursor:pointer}.tbl tr.pre .Lnx .tp{opacity:.9;font-weight:600}
+.tbl tr.hl-step,.tbl tr.hl-trig,.tbl tr.hl-wait,.tbl tr.hl-pre,.tbl tr.hl-win,.tbl tr.hl-loss{outline-offset:-3px}
+.tbl tr.hl-step{outline:3px solid #ffd34d;background:rgba(255,211,77,.10)}
+.tbl tr.hl-pre{outline:3px solid #ff6600;background:rgba(255,102,0,.12)}
+.tbl tr.hl-trig{outline:3px solid #4da3ff;background:rgba(77,163,255,.12)}
+.tbl tr.hl-step.hl-trig{outline:3px solid #4da3ff;background:repeating-linear-gradient(135deg,rgba(255,211,77,.22) 0 10px,rgba(77,163,255,.22) 10px 20px)}
+.tbl tr.hl-wait{outline:2px dashed #9aa3b5}
+@keyframes flw{0%,100%{background:transparent;outline-color:transparent}15%,45%,75%{background:rgba(46,204,113,.55);outline:3px solid #2ecc71}30%,60%,90%{background:rgba(46,204,113,.15)}}
+@keyframes fll{0%,100%{background:transparent;outline-color:transparent}15%,45%,75%{background:rgba(231,76,60,.6);outline:3px solid #e74c3c}30%,60%,90%{background:rgba(231,76,60,.15)}}
+.tbl tr.flw{animation:flw 3s ease;outline-offset:-3px}.tbl tr.fll{animation:fll 3s ease;outline-offset:-3px}
+.tbl tr.hl-spart{outline:3px dashed #ffd34d;outline-offset:-3px}.tbl tr.hl-tpart{outline:3px dashed #4da3ff;outline-offset:-3px}
+.sw.s1p{border:2px dashed #ffd34d}.sw.s2p{border:2px dashed #4da3ff}
+.tbl tr.hl-wait.hl-pre{outline:3px solid #ff6600;background:rgba(255,102,0,.12)}
+.tbl tr.hl-win{outline:3px solid #5fd38a;background:rgba(95,211,138,.12)}
+.tbl tr.hl-loss{outline:3px solid #ff6666;background:rgba(255,102,102,.12)}
+.stk2{position:sticky;top:var(--hdrH,150px);z-index:5}
+.mbar{background:#2b3245;border:1px solid #3d4760;border-radius:8px;padding:5px 9px;margin-bottom:6px;font-size:12.5px;color:#e8ebf2}.mbar .mh{display:block;color:var(--mu);font-size:11px}
+.hlinfo:empty{display:none}#hint:empty,.mbar.hm:empty{display:none}.mbar.hm{margin:7px 0 0}.hlinfo{cursor:pointer;background:#1f2533;border:1px solid #3d4760;border-radius:8px;padding:7px 9px;margin-bottom:8px;font-size:12.5px;color:#c9cfdc}
+.hlinfo .hl0{color:#8b93a7}.hlrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.sw{border-radius:5px;padding:2px 7px;font-weight:700;font-size:12px;color:#e8ebf2;border:2px solid}
+.sw.s1{border-color:#ffd34d}.sw.s2{border-color:#4da3ff}.sw.s3{border:2px dashed #9aa3b5}.sw.s4{border-color:#ff6600}.sw.s5{border-color:#5fd38a}.sw.s6{border-color:#ff6666}
+.ordr{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px}.ordr .evl{margin:0 0 0 auto;white-space:nowrap}.ordr .chip{padding:4px 10px;font-size:12.5px}
+.expl{background:#1f2533;border:1px solid #3d4760;border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12.5px;color:#c9cfdc}
+.expl .et{font-weight:800;color:var(--tx);margin-bottom:4px}.expl ol{margin:0;padding-left:18px}.expl li{margin-bottom:3px}.expl b{color:var(--tx)}
+.L0,.L1{color:#8b93a7}.L2,.L3{background:#FFF2CC;color:#7F6000}.L3{font-weight:700}
+.L4{background:#F4B183;color:#000;font-weight:700}.L5{background:#F2F2F2;color:#595959}
+.L6{background:#C6EFCE;color:#006100;font-weight:700}.L7{background:#FCE4E4;color:#9C0006}
+.L8{background:#FF6666;color:#fff;font-weight:700}.L9{background:#E7E6E6;color:#C00000}
+.Lnext{background:#7030A0;color:#fff;font-weight:700}
+.leg{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.selrow{display:flex;gap:6px;margin-top:6px}.selrow input{flex:1;min-width:0;background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 9px;font-size:15px}
+.msel{width:100%;margin-top:4px;background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:8px;font-size:14px}
+.mchips{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.mchips .chip{padding:3px 9px;font-size:12px}
+.busy{color:var(--or2);font-size:12px;margin-left:6px}
+.aft{margin-top:5px;background:#3a1f24;border:1px solid #7a2e38;color:#ffc9cf;border-radius:7px;padding:5px 8px;font-size:12.5px;font-weight:700}
+.aft.dim{background:var(--pan);border-color:var(--bd);color:var(--mu);font-weight:500}
+.hist{margin-top:5px;display:flex;flex-wrap:wrap;gap:3px 10px;font-size:12px;color:var(--mu)}.hist b{color:var(--tx)}.hist b.pos{color:var(--gr)}.hist b.neg{color:var(--rd)}
+.chk{margin-top:5px;border-radius:7px;padding:5px 8px;font-size:12px;background:var(--pan);color:#c9cfdc;border:1px solid var(--bd)}
+.chk.ok{border-color:#3b6a4d;background:#1d2f25}.chk.bad{border-color:#7a2e38;background:#2f1d21}
+.L8.Lrep{background:#8b0000;box-shadow:0 0 0 2px #ff6666}
+.note table td,.note table th{padding:3px 4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="t"><h1>__TITLE__</h1><span class="n"><span id="hdrN"></span><span class="ver">v__VER__</span></span></div>
+  <button class="btn inst" id="instBtn">⬇ Zainstaluj __TITLE__ jako osobną aplikację</button>
+  <div class="erow">
+    <input id="codeIn" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="kod, np. 010">
+    <button class="btn pri" id="addBtn">Dodaj</button><button class="btn" id="undoBtn">⟲</button>
+  </div>
+  <div class="hint" id="hint"></div>
+  <div id="hdrModel" class="mbar hm"></div>
+  <div class="tgt" id="tgt"></div>
+</header>
+<main id="main"></main>
+<nav>
+  <button data-v="gra" class="on">GRA</button>
+  <button data-v="tab">TABELA</button>
+  <button data-v="moje" id="navMine">MOJE</button>
+  <button data-v="ust">SZUKAJ</button>
+</nav>
+<script id="wsrc" type="text/js-worker">
+"use strict";
+// ===== SILNIK — FSM 1:1 z appek RAZEM (silnik 1T) i szukaj/engine.py (sim + simA: powtórki BUST, okres sprawdzenia) =====
+const ST = [8, 8, 16, 32, 64, 128, 256, 512], CUM = [8, 16, 32, 64, 128, 256, 512, 1024];
+let AL = [], X = null, N = 0, Y = null;
+const m1 = (p, c) => p.split('∪').some(q => q.length === 3 && [...q].every((x, i) => x === 'x' || x === c[i]));
+function table(pred) {
+  const parts = pred.split(' → '), t = new Uint8Array(3 * AL.length);
+  parts.forEach((p, j) => AL.forEach((c, k) => { t[j * AL.length + k] = m1(p, c) ? 1 : 0; }));
+  return { t, L: parts.length };
+}
+const _tc = new Map();
+function tab(pred) { let v = _tc.get(pred); if (!v) { v = table(pred); _tc.set(pred, v); } return v; }
+function hit(P, i) {
+  if (i < P.L - 1) return false;
+  const A = AL.length;
+  for (let j = 0; j < P.L; j++) if (!P.t[j * A + X[i - P.L + 1 + j]]) return false;
+  return true;
+}
+function limitFor(cyc, rules) { for (const [mc, mb] of rules) if (mc === null || cyc <= mc) return mb; return null; }
+// wersja A: cykle i BUST-y w progach, min. BUST-ów, max powtórek (BUST od razu po BUST-cie)
+function qual(cyc, bu, cl, R) { if (cyc < R.minCyc || bu < R.minBust || cl > R.maxClose) return false; const l = limitFor(cyc, R.rules); return l !== null && bu <= l; }
+// m = [typ, STEP, x, TRIGGER, off]
+// powtórka = BUST, po którym następny BUST przyszedł po mniej niż R.gap cyklach (gap 2 = od razu w następnym cyklu)
+// nauka = cykle zakończone przed wierszem split (65% kodów), sprawdzenie = reszta (ostatnie 35%)
+function sim(m, R) {
+  const S = tab(m[1]), T = tab(m[3]), x = m[2], off = m[4], split = Math.floor(N * R.split), gap = R.gap;
+  let st = 0, cnt = 0, bs = 0, i = 0, pnl = 0, nb = 0, nw = 0, nbu = 0, k5 = 0, k5w = 0, k5b = 0, srow = -1, wz = -1, ph = 0, le = -1, lt = 0, lk = 0;
+  let cyc = 0, lb = -1, lbr = -1, mg = 0, mgi = 0, mgo = 0, ci = 0, bi = 0, co = 0, bo = 0, zo = 0, zb = 0, cl = 0, cli = 0, pw = 0, pb = 0;
+  while (i < N) {
+    if (st === 0) {
+      if (hit(S, i)) { cnt++; if (cnt >= x) { st = 1; srow = i; } } else cnt = 0;
+      i++;
+    } else if (hit(T, i)) {
+      const bp = i + off;
+      if (bp >= N) { ph = 2; wz = bp; break; }
+      const w = Y[X[bp]] === 1;
+      nb++; if (bs === 4) k5++;
+      if (w) {
+        pnl += ST[bs] * 3 - CUM[bs]; nw++; if (bs >= 4) k5w++; le = bp; lt = 1; lk = bs + 1; bs = 0;
+        if (lb >= 0 && lb === cyc - 1) pw++;   // WIN w cyklu zaraz po BUST-cie
+        cyc++; if (bp < split) ci++; else co++;
+      } else if (bs === 7) {
+        pnl -= CUM[7]; nbu++; k5b++; le = bp; lt = 2; lk = 8; bs = 0;
+        if (lb >= 0) {
+          const g = cyc - lb;
+          if (!mg || g < mg) mg = g;
+          if (bp < split) { if (!mgi || g < mgi) mgi = g; } else if (!mgo || g < mgo) mgo = g;
+          if (g < gap) { cl++; if (bp < split) cli++; if (lbr >= split) zb++; }
+          if (g === 1) pb++;
+        }
+        if (bp < split) { ci++; bi++; } else { co++; bo++; zo++; }
+        lb = cyc; lbr = bp; cyc++;
+      } else bs++;
+      st = 0; cnt = 0; i = bp + 1;
+    } else i++;
+  }
+  if (ph === 0 && st === 1) ph = 1;
+  return { nb, nw, nbu, pnl, k5, k5w, k5b, bs, ph, srow, wz, cnt, le, lt, lk,
+    mg, sinceB: lb >= 0 ? cyc - 1 - lb : -1, lbr, ci, bi, mgi, co, bo, mgo, zo, zb, cl, cli, pw, pb };
+}
+// etykiety wierszy dla jednego modelu (TABELA): K = rodzaj, A = licznik/krok, B = wiersz zakładu / zysk,
+// Q: bit 1 = model spełniał kryteria, bit 2 = cykl zaraz po BUST-cie (gra wersji A), bit 4 = BUST od razu po BUST-cie (powtórka)
+// K: 0 czekam na STEP · 1 czekam na TRIGGER · 2 step n/x · 3 STEP · 4 TRIGGER · 5 przed grą · 6 WIN · 7 przegrana · 8 BUST · 9 licznik → 0
+function labels(m, R) {
+  const S = tab(m[1]), T = tab(m[3]), x = m[2], off = m[4];
+  const K = new Int8Array(N), A = new Int16Array(N), B = new Int32Array(N), Q = new Int8Array(N);
+  let st = 0, cnt = 0, bs = 0, i = 0, nw = 0, nbu = 0, cl = 0, cyc = 0, lb = -1;
+  while (i < N) {
+    if (st === 0) {
+      if (hit(S, i)) { cnt++; if (cnt >= x) { st = 1; K[i] = 3; } else { K[i] = 2; } A[i] = cnt; }
+      else { K[i] = cnt > 0 ? 9 : 0; cnt = 0; }
+      i++;
+    } else if (hit(T, i)) {
+      const bp = i + off;
+      K[i] = 4; A[i] = bs + 1; B[i] = bp; Q[i] = (qual(nw + nbu, nbu, cl, R) ? 1 : 0) | (lb >= 0 && lb === cyc - 1 ? 2 : 0);
+      for (let j = i + 1; j < Math.min(bp, N); j++) { K[j] = 5; A[j] = bs + 1; B[j] = bp; Q[j] = Q[i]; }
+      if (bp >= N) break;
+      const w = Y[X[bp]] === 1;
+      A[bp] = bs + 1; Q[bp] = Q[i];
+      if (w) { K[bp] = 6; B[bp] = ST[bs] * 3 - CUM[bs]; nw++; bs = 0; cyc++; }
+      else if (bs === 7) {
+        K[bp] = 8; B[bp] = -CUM[7]; nbu++; bs = 0;
+        if (lb >= 0) { const g = cyc - lb; if (g < R.gap) cl++; if (g === 1) Q[bp] |= 4; }
+        lb = cyc; cyc++;
+      }
+      else { K[bp] = 7; bs++; }
+      st = 0; cnt = 0; i = bp + 1;
+    } else { K[i] = 1; i++; }
+  }
+  return { K, A, B, Q };
+}
+function setData(d) { AL = d.AL; X = Int8Array.from(d.X); N = X.length; Y = Uint8Array.from(d.Y); _tc.clear(); }
+function evalAll(d) {
+  const out = [];
+  d.pool.forEach((m, k) => {
+    const r = sim(m, d.R);
+    out.push(r);
+  });
+  return { out };
+}
+function rnd(n) { return Math.floor(Math.random() * n); }
+function search(d) {
+  const { step, trig, R, have } = d, seen = new Set(have), found = [];
+  const t0 = Date.now();
+  for (let k = 0; k < d.n; k++) {
+    const s = step[rnd(step.length)], tr = trig[rnd(trig.length)];
+    const m = [s[0], s[1], s[0] === 'S' ? 1 + rnd(5) : 1, tr, 1 + rnd(7)];
+    const key = m.join('|');
+    if (seen.has(key)) continue;
+    const r = sim(m, R);
+    const cyc = r.nw + r.nbu;
+    if (qual(cyc, r.nbu, r.cl, R)) { seen.add(key); found.push(m); }
+    if (k % 500 === 499) postMessage({ type: 'prog', k: k + 1, n: d.n, f: found.length, ms: Date.now() - t0 });
+  }
+  return found;
+}
+onmessage = e => {
+  const d = e.data;
+  if (d.type === 'data') { setData(d); return; }
+  if (d.type === 'eval') { const r = evalAll(d); postMessage({ type: 'eval', id: d.id, ...r }); }
+  if (d.type === 'row') {   // kto grał na wierszu d.row: symulacja na kodach sprzed tego wiersza
+    const N0 = N; N = d.row; const bets = [];
+    d.pool.forEach((m, k) => { const r = sim(m, d.R); if (r.ph === 2 && r.wz === d.row) bets.push({ k, r }); });
+    N = N0; postMessage({ type: 'row', id: d.id, row: d.row, bets });
+  }
+  if (d.type === 'label') { const r = labels(d.m, d.R); postMessage({ type: 'label', id: d.id, ...r }, [r.K.buffer, r.A.buffer, r.B.buffer, r.Q.buffer]); }
+  if (d.type === 'search') { const f = search(d); postMessage({ type: 'search', found: f }); }
+};
+</script>
+<script>
+"use strict";
+const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
+const MASTER_SEED = '__SEED__';
+const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
+const APP_VER = '1.0.1';
+const SEED_N = MASTER_SEED.length / 3;
+const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
+const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
+const $ = id => document.getElementById(id);
+
+// ---- kody: seed + wspólne z RAZEM (ten sam klucz pamięci) ----
+function readAdded() { const s = lsGet(CFG.seedKey, ''); return /^(\d{3})*$/.test(s) ? s : ''; }
+let addedStr = readAdded();
+let codes = [];
+function rebuildCodes() { const s = MASTER_SEED + addedStr; codes = []; for (let i = 0; i < s.length; i += 3) codes.push(s.substr(i, 3)); }
+rebuildCodes();
+
+// ---- ustawienia ----
+let tgt = lsGet(LSK.tgt, CFG.targets[0]); if (!CFG.targets.includes(tgt)) tgt = CFG.targets[0];
+const defR = () => ({ rules: CFG.defRules, minCyc: CFG.minCyc, minBust: CFG.minBust, maxClose: CFG.maxClose, gap: CFG.gap, split: CFG.split });
+let R = (() => { try { const r = JSON.parse(lsGet(LSK.rules, '')); if (r && r.rules) {
+  if (!r.rules.some(x => x[0] === null)) r.rules.push(CFG.defRules.find(x => x[0] === null) || [null, 11]);
+  return Object.assign(defR(), r, { gap: CFG.gap, split: CFG.split }); } } catch (e) {} return defR(); })();
+let afterOnly = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_gra_only') === '1'; } catch (e) { return false; } })();   // GRA: tylko GRA na następnym
+let view = 'gra', busy = false, searching = null, bandCap = {};
+let onlyMine = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_onlymine') === '1'; } catch (e) { return false; } })();   // GRA: tylko MOJE MODELE
+let BANDS = (() => { try { const v = JSON.parse(lsGet(LSK.bands, '')); if (Array.isArray(v)) return v; } catch (e) {} return R.rules.map((_, i) => i); })();
+function foundKey() { return LSK.found + tgt; }
+function getFound() { try { const v = JSON.parse(lsGet(foundKey(), '[]')); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function pool() {   // pula z chmury (znaleziona na bazie do Nr seedN) + znalezione w appce (m[5] = Nr znalezienia) + MOJE GRY spoza puli
+  const base = POOLS[tgt].pool.map(m => [m[0], m[1], m[2], m[3], m[4], POOLS[tgt].seedN]).concat(getFound());
+  const have = new Set(base.map(specKey));
+  getMy().forEach(g => { if (!have.has(specKey(g.m))) { base.push([...g.m, g.start]); have.add(specKey(g.m)); } });
+  return base;
+}
+// ---- MOJE GRY: modele, które gram — śledzone do WIN albo BUST (krok 8), niezależnie od kryteriów i filtrów ----
+const specKey = m => m.slice(0, 5).join('|');
+function getMy() { try { const v = JSON.parse(lsGet(LSK.my + tgt, '[]')); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function setMy(a) { lsSet(LSK.my + tgt, JSON.stringify(a)); }
+function myIndex(g) { return P.findIndex(m => specKey(m) === specKey(g.m)); }
+function isMine(k) { return k >= 0 && k < P.length && getMy().some(g => specKey(g.m) === specKey(P[k])); }
+function startMy(k) {
+  const r = lastEval.out[k], a = getMy().filter(g => specKey(g.m) !== specKey(P[k]));
+  a.push({ m: P[k].slice(0, 5), id: mid(k, P[k]), start: codes.length, s0: r.bs + 1, t: Date.now() });
+  setMy(a); toast(`Gram ${mid(k, P[k])} od kroku ${r.bs + 1} (${ST[r.bs]} zł) — w MOJE GRY do WIN / BUST`); render();
+}
+// ---- okno STATYSTYKI modelu (przytrzymanie karty): statystyki + „Gram ten model” → MOJE GRY ----
+let statK = null;
+function openStats(k) { statK = k; if (selK !== k) { selK = k; tabN = 150; tabScroll = true; hlBet = -1; liveOn = false; } needLabels(); renderSheet(); }
+function closeStats() { statK = null; const o = $('statPop'); if (o) o.remove(); }
+function renderSheet() {
+  if (statK === null) return;
+  let o = $('statPop');
+  if (!o) { o = document.createElement('div'); o.id = 'statPop'; o.className = 'pop'; document.body.appendChild(o); o.onclick = e => { if (e.target === o) closeStats(); }; }
+  const k = statK, m = P[k], r = lastEval ? lastEval.out[k] : null, ready = lab && selK === k && r;
+  const mine = isMine(k), g = mine ? getMy().find(x => specKey(x.m) === specKey(m)) : null, res = g ? myResult(g, r) : null;
+  const ph = !r ? '' : r.ph === 2 ? (r.wz === codes.length ? `GRA na następnym wierszu (w.${r.wz + 1})` : `zakład ustawiony na w.${r.wz + 1} (za ${r.wz + 1 - codes.length})`) : r.ph === 1 ? 'STEP otwarty — czekam na TRIGGER' : 'czekam na STEP';
+  o.innerHTML = `<div class="sheet"><button class="x" id="spX">✕</button>
+    <h3>Model ${mid(k, m)}</h3><div class="hs">${esc(ruleTxt(m))}</div>
+    ${r ? `<div class="spnow">Teraz: <b>krok ${r.bs + 1} · ${ST[r.bs]} zł</b> · ${ph}</div>` : ''}
+    ${!r ? '' : mine
+      ? `<button class="btn playing" id="spStop">${res ? (res.win ? '✔ WIN' : '✖ BUST') + ` — gra zakończona (${res.pnl >= 0 ? '+' : ''}${res.pnl} zł). Usuń z MOJE GRY` : `■ W MOJE GRY od w.${g.start + 1} (wejście k${g.s0}) — przestań śledzić`}</button>`
+      : `<button class="btn play" id="spPlay">▶ Gram ten model — dodaj do MOJE GRY (teraz krok ${r.bs + 1}, ${ST[r.bs]} zł)</button><div class="hint" style="margin-top:4px">${afterB(r) ? 'Trwa cykl po BUST-cie. ' : 'Uwaga: model nie jest teraz tuż po BUST-cie. '}Model zostanie w MOJE GRY na górze ekranu GRA do WIN albo kroku 8, niezależnie od kryteriów i filtrów.</div>`}
+    ${ready ? statsHtml(r) : '<div class="hint" style="margin-top:10px">Liczę statystyki…</div>'}
+    <button class="btn more" id="spTab" style="margin-top:10px">Otwórz TABELĘ tego modelu</button><button class="btn more" id="spClose" style="margin-top:6px">✕ Zamknij</button></div>`;
+  $('spX').onclick = closeStats; $('spClose').onclick = closeStats;
+  $('spTab').onclick = () => { closeStats(); openTab(k); };
+  const p = $('spPlay'); if (p) p.onclick = () => { startMy(k); renderSheet(); };
+  const s = $('spStop'); if (s) s.onclick = () => { if (confirm('Usunąć z MOJE GRY?')) { stopMy(specKey(m)); renderSheet(); } };
+}
+// dotknięcie karty → TABELA; przytrzymanie (albo prawy klik) → STATYSTYKI
+function bindCard(c) {
+  const k = +c.dataset.mk; let t = null, lp = false, x0 = 0, y0 = 0;
+  const cancel = () => { clearTimeout(t); t = null; };
+  c.addEventListener('pointerdown', e => { lp = false; x0 = e.clientX; y0 = e.clientY; cancel(); t = setTimeout(() => { lp = true; c.classList.add('hold'); setTimeout(() => c.classList.remove('hold'), 250); openStats(k); }, 550); });
+  c.addEventListener('pointermove', e => { if (t && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) cancel(); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => c.addEventListener(ev, cancel));
+  c.addEventListener('contextmenu', e => { e.preventDefault(); cancel(); lp = true; openStats(k); });
+  c.onclick = () => { if (lp) { lp = false; return; } if (c.closest('.sec.mine')) openMine(k); else openTab(k); };
+}
+function stopMy(key) { setMy(getMy().filter(g => specKey(g.m) !== key)); render(); }
+function myResult(g, r) {   // null = gra trwa; inaczej wynik od wejścia (stawki gracza od kroku s0)
+  if (!r || r.le < g.start) return null;
+  const paid = k => ST.slice(g.s0 - 1, k).reduce((a, b) => a + b, 0);
+  return r.lt === 1 ? { win: true, k: r.lk, row: r.le, pnl: 3 * ST[r.lk - 1] - paid(r.lk) } : { win: false, k: 8, row: r.le, pnl: -paid(8) };
+}
+function ruleTxt(m) {
+  const typ = m[0] === 'S' ? 'SERIA' : 'UKŁAD';
+  return `STEP ${typ} ${m[1]}${m[0] === 'S' ? ' ×' + m[2] : ''} → TRIGGER ${m[3]} → zakład +${m[4]}`;
+}
+function mid(k, m) { return (k < POOLS[tgt].pool.length ? 'P' : 'N') + (k < POOLS[tgt].pool.length ? k + 1 : k - POOLS[tgt].pool.length + 1); }
+
+// ---- worker ----
+const W = new Worker(URL.createObjectURL(new Blob([$('wsrc').textContent], { type: 'text/javascript' })));
+let lastEval = null, evalId = 0, P = [];
+let selK = null, lab = null, labId = 0, labFor = '', tabN = 150, tabEv = false, tabScroll = true, hlBet = -1, liveOn = false;   // hlBet = podświetlony dawny zakład (wiersz); liveOn = ramki stanu TERAZ (domyślnie schowane)
+let tabAsc = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_asc') !== '0'; } catch (e) { return true; } })();   // najstarsze u góry   // TABELA: wybrany model + jego etykiety
+W.onmessage = e => {
+  const d = e.data;
+  if (d.type === 'eval') { if (d.id !== evalId) return; lastEval = d; busy = false; render(); if (pendingPop && codes.length === pendingPop.row + 1) { showResultPop(pendingPop); } pendingPop = null; if (statK !== null) { needLabels(); renderSheet(); } }
+  if (d.type === 'label') { if (d.id !== labId) return; lab = d; if (view === 'tab' || view === 'moje') render(); if (statK !== null) renderSheet(); }
+  if (d.type === 'row') { if (d.id !== rowId) return; rowPop(d); return; }
+  if (d.type === 'prog') { searching = d; if (view === 'ust') render(); }
+  if (d.type === 'search') {
+    const f = getFound(), n = codes.length;
+    d.found.forEach(m => f.push([m[0], m[1], m[2], m[3], m[4], n]));
+    lsSet(foundKey(), JSON.stringify(f.slice(-2000)));
+    toast(`Znaleziono ${d.found.length} nowych modeli`);
+    searching = null; recompute();
+  }
+};
+function recompute() {
+  busy = true; P = pool(); evalId++;
+  const pos = TPOS[tgt];
+  W.postMessage({ type: 'data', AL, X: codes.map(c => AL.indexOf(c)), Y: AL.map(c => c[pos] === '1' ? 1 : 0) });
+  W.postMessage({ type: 'eval', id: evalId, pool: P, R, seedN: SEED_N });
+  render();
+}
+
+// ---- wpis kodów ----
+function toast(t) { $('hint').textContent = t; clearTimeout(toast._t); toast._t = setTimeout(hint, 3500); }
+function hint() { $('hint').textContent = ''; }   // bez stałego opisu — tylko krótkie komunikaty
+// ---- okienko wyniku: po wpisaniu kodu na wierszu, na który grały modele (jak w RAZEM) ----
+let pendingPop = null;
+function betsOnNextRow() {   // modele z GRĄ na następnym wierszu (widoczne na GRA + MOJE GRY)
+  if (!lastEval) return [];
+  const n = codes.length, out = lastEval.out, list = [];
+  out.forEach((r, k) => {
+    if (r.ph !== 2 || r.wz !== n) return;
+    const mine = isMine(k);
+    if (mine) { const g = getMy().find(x => specKey(x.m) === specKey(P[k])); if (g && !myResult(g, r)) list.push({ k, bs: r.bs, mine: true, g }); return; }
+    if (showGra(r)) list.push({ k, bs: r.bs, mine: false });
+  });
+  return list;
+}
+function showResultPop(pp) {
+  const c = codes[pp.row], win = isHit(c), old = $('resPop'); if (old) old.remove();
+  const items = pp.list.map(x => {
+    const st = ST[x.bs], step = x.bs + 1;
+    let res = win ? `WIN +${2 * st} zł` : x.bs === 7 ? `BUST −${st} zł` : `przegrana −${st} zł → następny k${step + 1} ${ST[step]} zł`;
+    if (x.mine && win) { const paid = ST.slice(x.g.s0 - 1, step).reduce((a, b) => a + b, 0); res += ` · od wejścia ${3 * st - paid >= 0 ? '+' : ''}${3 * st - paid} zł`; }
+    if (x.mine && !win && x.bs === 7) { const paid = ST.slice(x.g.s0 - 1, 8).reduce((a, b) => a + b, 0); res += ` · od wejścia −${paid} zł`; }
+    return `<div class="rp-i">${x.mine ? '▶ ' : ''}<b>${mid(x.k, P[x.k])}</b> k${step} ${st} zł — ${res}</div>`;
+  }).join('');
+  const sum = pp.list.reduce((s, x) => s + (win ? 2 * ST[x.bs] : -ST[x.bs]), 0);
+  const d = document.createElement('div'); d.id = 'resPop'; d.className = 'respop ' + (win ? 'win' : 'loss');
+  d.innerHTML = `<div class="rp-h">${win ? 'WIN ✓' : pp.list.some(x => x.bs === 7) ? 'PRZEGRANA ✗ (BUST na k8)' : 'PRZEGRANA ✗'}</div>
+    <div class="rp-s">w.${pp.row + 1} = <b>${c}</b> ${win ? 'to' : 'to nie'} ${tgt} · ${pp.list.length} model(i) · razem ${sum >= 0 ? '+' : ''}${sum} zł</div>
+    <div class="rp-l">${items}</div><div class="rp-x">dotknij, żeby zamknąć</div>`;
+  d.onclick = () => d.remove();
+  document.body.appendChild(d);
+  if (!pp.noFlash) flashTo(pp, win);
+  setTimeout(() => d.classList.add('in'), 10);
+  setTimeout(() => { if (d.isConnected) { d.classList.remove('in'); setTimeout(() => d.remove(), 300); } }, 6000 + 400 * Math.min(pp.list.length, 10));
+}
+// dotknięcie wiersza WIN / przegrana / BUST w TABELI → to samo okienko z wynikami wszystkich modeli na tym wierszu
+let rowId = 0;
+function askRowPop(i) { rowId++; W.postMessage({ type: 'row', id: rowId, row: i, pool: P, R }); }
+function rowPop(d) {
+  const my = getMy(), list = [];
+  d.bets.forEach(({ k, r }) => {
+    const g = my.find(x => specKey(x.m) === specKey(P[k]) && x.start <= d.row);
+    if (g) list.push({ k, bs: r.bs, mine: true, g });
+    else if (showGra(r) || k === selK) list.push({ k, bs: r.bs, mine: false });
+  });
+  list.sort((a, b) => (b.k === selK) - (a.k === selK) || b.mine - a.mine || b.bs - a.bs);
+  if (list.length) showResultPop({ row: d.row, list, noFlash: true });
+}
+// po okienku WIN/PRZEGRANA: TABELA modelu z tej gry, zjazd na koniec i rozbłysk zagranego wiersza
+let flashRow = null;
+function flashTo(pp, win) {
+  const ks = pp.list.map(x => x.k), mine = pp.list.filter(x => x.mine).map(x => x.k);
+  const k = ks.includes(selK) && (view !== 'gra' || !mine.length || mine.includes(selK)) ? selK : mine.length ? mine[0] : ks[0];
+  flashRow = { i: pp.row, win };
+  if (view === 'moje' && !mine.includes(k)) view = 'tab';
+  if (view === 'gra') view = mine.includes(k) ? 'moje' : 'tab';
+  if (selK !== k) { selK = k; tabN = 150; }
+  tabScroll = true; hlBet = -1; liveOn = false;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === view));
+  render();
+}
+function doFlash(el) {
+  if (!flashRow || !lab) return;
+  const f = flashRow; flashRow = null;
+  const tr = el.querySelector(`tr[data-i="${f.i}"]`); if (!tr) return;
+  setTimeout(() => { if (tabAsc) scrollTo(0, document.documentElement.scrollHeight); else tr.scrollIntoView({ block: 'center' }); tr.classList.add(f.win ? 'flw' : 'fll'); setTimeout(() => tr.classList.remove('flw', 'fll'), 3200); }, 30);
+}
+function addCode() {
+  const v = $('codeIn').value.trim();
+  if (!/^\d{1,3}$/.test(v)) return toast('Kod: 3 cyfry');
+  const c = v.padStart(3, '0');
+  if (!AL.includes(c)) return toast(`Kod ${c} nie występuje w tym ciągu`);
+  const bets = busy ? [] : betsOnNextRow(), row = codes.length;   // kto gra na wierszu, który właśnie wpisujesz
+  addedStr = readAdded() + c;             // czytaj-zmień-zapisz: nie gubi kodów wpisanych w RAZEM
+  if (!lsSet(CFG.seedKey, addedStr)) alert('BŁĄD zapisu pamięci telefonu!');
+  pendingPop = bets.length ? { row, list: bets } : null;
+  $('codeIn').value = ''; rebuildCodes(); recompute(); toast(`Dodano ${c} jako Nr ${codes.length}`);
+}
+function undo() {
+  addedStr = readAdded();
+  if (!addedStr.length) return toast('Brak dopisanych kodów do cofnięcia');
+  const c = addedStr.slice(-3);
+  if (!confirm(`Cofnąć ostatni kod ${c} (Nr ${codes.length})? Zniknie też z ${CFG.razem}.`)) return;
+  addedStr = addedStr.slice(0, -3); lsSet(CFG.seedKey, addedStr); rebuildCodes(); recompute();
+}
+$('addBtn').onclick = addCode; $('undoBtn').onclick = undo;
+$('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') addCode(); });
+// import: JSON z RAZEM / jej tabel ({codes:[...]} albo lista) lub tekst z kodami; pełny ciąg od Nr 1
+function importCodes(text, fname) {
+  let raw = null, kind = '';
+  try { const d = JSON.parse(text); raw = Array.isArray(d) ? d : d && d.codes; kind = d && !Array.isArray(d) ? (d.kind || d.app || d.source || '') : 'lista'; }
+  catch (e) { raw = (String(text).match(/\d{1,3}/g) || []); kind = 'tekst'; }
+  if (!Array.isArray(raw) || !raw.length) throw new Error('w pliku nie ma listy kodów (codes)');
+  const arr = raw.map(x => String(x == null ? '' : x).trim()).map(x => /^\d{1,3}(\.0+)?$/.test(x) ? String(parseInt(x, 10)).padStart(3, '0') : x);
+  const badI = arr.findIndex(c => !AL.includes(c));
+  if (badI >= 0) throw new Error(`niepoprawny kod „${arr[badI]}” w Nr ${badI + 1}`);
+  syncFromRazem();
+  const fix = CFG.seedFix || {};                       // znane różnice starych appek (Nr → kod w starej appce)
+  const n = Math.min(arr.length, codes.length);
+  for (let i = 0; i < n; i++) if (arr[i] !== codes[i] && fix[i + 1] !== arr[i])
+    throw new Error(`różnica w Nr ${i + 1}: plik ${arr[i]}, appka ${codes[i]}. Nic nie zmieniono.`);
+  if (arr.length <= codes.length) { alert(`Plik ${fname} (${arr.length} kodów${kind ? ', ' + kind : ''}) jest zgodny, ale nie ma nowych kodów.\nAppka ma ${codes.length}. Nic nie zmieniono.`); return; }
+  const gain = arr.length - codes.length;
+  if (!confirm(`Import ${fname}\n${kind ? 'rodzaj: ' + kind + ' · ' : ''}${arr.length} kodów\nzgodny z appką w Nr 1–${codes.length}\n\nDopisać ${gain} nowych kodów (Nr ${codes.length + 1}–${arr.length})?\nTrafią też do ${CFG.razem}.`)) return;
+  addedStr = readAdded() + arr.slice(codes.length).join('');
+  if (!lsSet(CFG.seedKey, addedStr)) { alert('BŁĄD zapisu pamięci telefonu!'); return; }
+  lsSet(LSK.imp, `${fname} · ${new Date().toLocaleString('pl-PL')} · n=${arr.length} · +${gain}`);
+  rebuildCodes(); recompute(); toast(`Zaimportowano +${gain} kodów, teraz Nr ${codes.length}`);
+}
+function syncFromRazem() { const s = readAdded(); if (s !== addedStr) { addedStr = s; rebuildCodes(); recompute(); } }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncFromRazem(); });
+window.addEventListener('focus', syncFromRazem);
+window.addEventListener('storage', e => { if (e.key === CFG.seedKey) syncFromRazem(); });
+
+// ---- widoki ----
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  view = b.dataset.v; if (view === 'moje' || view === 'tab') { tabScroll = true; hlBet = -1; liveOn = false; } document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b)); render(); scrollTo(0, 0);
+});
+function renderTgt() {
+  $('tgt').innerHTML = CFG.targets.length < 2 ? '' : CFG.targets.map(t => `<button class="chip ${t === tgt ? 'on' : ''}" data-t="${t}">BET ${t}</button>`).join('');
+  $('tgt').querySelectorAll('button').forEach(b => b.onclick = () => { tgt = b.dataset.t; lsSet(LSK.tgt, tgt); lastEval = null; selK = null; labFor = ''; renderTgt(); recompute(); });
+}
+function isHit(c) { return c[TPOS[tgt]] === '1'; }
+function lastCodes() {
+  return `<div class="last">ostatnie: ${codes.slice(-10).map((c, i) => `<b class="${isHit(c) ? 'h' : ''}">${c}</b>`).join('')}</div>`;
+}
+function trigNext(m) {   // które kody na w. N+1 dadzą TRIGGER (gdy STEP otwarty)
+  const parts = m[3].split(' → '), L = parts.length;
+  const m1 = (p, c) => p.split('∪').some(q => [...q].every((x, i) => x === 'x' || x === c[i]));
+  for (let j = 0; j < L - 1; j++) if (!m1(parts[j], codes[codes.length - (L - 1) + j] || 'XXX')) return [];
+  return AL.filter(c => m1(parts[L - 1], c));
+}
+const cyW = n => n === 1 ? 'cykl' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'cykle' : 'cykli';
+const wW = n => n === 1 ? 'wiersz' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'wiersze' : 'wierszy';
+function checkTxt(r) {   // okres sprawdzenia (ostatnie 35% kodów)
+  const held = r.zb === 0;
+  return `<div class="chk ${r.bo ? (held ? 'ok' : 'bad') : ''}"><b>Sprawdzenie</b> (ostatnie ${Math.round(100 - 100 * R.split)}% kodów): ${r.co} ${cyW(r.co)} · BUST ${r.bo}` +
+    (r.bo ? ` · BUST od razu po BUST-cie: <b>${r.zb}</b> ${held ? '✔ nie było' : '✖'}` : ' · bez BUST-u') + `</div>`;
+}
+function card(k, m, r, kind) {
+  const n = codes.length, step = r.bs + 1, stake = ST[r.bs], cyc = r.nw + r.nbu, lim = limitFor(cyc);
+  let st = '';
+  const tw = () => { const t = r.wz - m[4], two = partsOf(m[3]).length === 2; return `TRIGGER ${two ? `w.${t}–${t + 1} (${codes[t - 1]} + ${codes[t]})` : `w.${t + 1} (${codes[t]})`} = ${m[3]} · +${m[4]}`; };
+  if (kind === 'gra') st = `<div class="st p1">GRAJ w.${n + 1}: ${stake} zł na ${tgt} (krok ${step}/8, kurs 3,0)<span class="s">${tw()}</span></div>`;
+  else if (kind === 'czeka') st = `<div class="st p2">Zakład ustawiony: ${stake} zł na w.${r.wz + 1} (za ${r.wz + 1 - n} w.)<span class="s">${tw()} · nic nie rób do tego wiersza</span></div>`;
+  else if (kind === 'trig') {
+    const tc = trigNext(m);
+    st = `<div class="st p3">STEP otwarty (w.${r.srow + 1}) — czekam na TRIGGER ${esc(m[3])}` +
+      `<span class="s">${tc.length ? `jeśli w.${n + 1} = ${tc.join(', ')} → zakład ${stake} zł na w.${n + 1 + m[4]}` : 'następny wiersz nie da TRIGGERA'}</span></div>`;
+  } else st = `<div class="st p6">Czekam na STEP${m[0] === 'S' ? ` (licznik ${r.cnt}/${m[2]})` : ''}</div>`;
+  const after = r.sinceB === 0 ? `<div class="aft">BUST w w.${r.lbr + 1} (${n - 1 - r.lbr} ${wW(n - 1 - r.lbr)} temu) → teraz cykl po BUST-cie, krok ${step}/8</div>`
+    : r.sinceB > 0 ? `<div class="aft dim">ostatni BUST ${r.sinceB} ${cyW(r.sinceB)} temu (w.${r.lbr + 1})</div>` : '';
+  const every = r.nbu ? Math.round(cyc / r.nbu) : 0;
+  return `<div class="mc k${Math.min(step, 7)}${isTop(r) ? ' ktop' : ''}" data-mk="${k}"><div class="h"><span class="id">${mid(k, m)}${isTop(r) ? ` <span class="top">★ ${topCyc()}+ cykli</span>` : ''}</span><span class="stk">krok ${step} · ${stake} zł</span></div>
+    <div class="rule">${esc(ruleTxt(m))}</div>${after}${st}
+    <div class="hist"><span>cykle <b>${cyc}</b></span><span>BUST <b>${r.nbu}</b>/${lim === null ? '—' : lim}${every ? ` (co ~${every})` : ''}</span><span>BUST po BUST-cie <b class="${r.pb ? 'neg' : 'pos'}">${r.pb}</b></span><span>po BUST-cie WIN <b>${r.pw}</b></span><span class="${r.pnl >= 0 ? 'pos' : 'neg'}">${r.pnl >= 0 ? '+' : ''}${r.pnl} zł</span></div>
+    ${checkTxt(r)}<div class="tapt">dotknij → TABELA · przytrzymaj → STATYSTYKI i „Gram ten model”</div></div>`;
+}
+const ST = [8, 8, 16, 32, 64, 128, 256, 512];
+function limitFor(cyc) { for (const [mc, mb] of R.rules) if (mc === null || cyc <= mc) return mb; return null; }
+function topCyc() { return Math.max(0, ...R.rules.filter(r => r[0] !== null).map(r => r[0])); }   // ponad ten próg = najwyższa półka
+const isTop = r => R.rules.some(x => x[0] === null) && r.nw + r.nbu > topCyc();
+function qual(r) { const cyc = r.nw + r.nbu; if (cyc < R.minCyc || r.nbu < R.minBust || r.cl > R.maxClose) return false; const l = limitFor(cyc); return l !== null && r.nbu <= l; }
+const afterB = r => r.sinceB === 0;   // ostatni zakończony cykl = BUST → trwa cykl zaraz po BUST-cie
+const showGra = r => qual(r) && afterB(r) && BANDS.includes(bandOf(r));
+function rankKey(r) { const c = r.nw + r.nbu; return (isTop(r) ? 0 : 1) + r.pb + r.nbu / c - c * 1e-6; }
+
+// grupy wg cykli = wiersze reguł (do 200 / do 300 / do 400 / ponad 400); kolejność na ekranie: od najdłuższych
+function bandOf(r) { const c = r.nw + r.nbu; for (let i = 0; i < R.rules.length; i++) if (R.rules[i][0] === null || c <= R.rules[i][0]) return i; return -1; }
+function bandName(i) {
+  const [mc, mb] = R.rules[i], lo = i ? R.rules[i - 1][0] + 1 : R.minCyc;
+  return mc === null ? `★ ponad ${R.rules[i - 1][0]} cykli · max ${mb} BUST` : `${lo}–${mc} cykli · max ${mb} BUST`;
+}
+function bandShort(i) { const mc = R.rules[i][0]; return mc === null ? `★ ${R.rules[i - 1][0]}+` : `do ${mc}`; }
+const PHASE_ORD = { gra: 0, czeka: 1, trig: 2, wait: 3 };
+function phaseOf(r) { const n = codes.length; return r.ph === 2 ? (r.wz === n ? 'gra' : 'czeka') : r.ph === 1 ? 'trig' : 'wait'; }
+const PHASE_TXT = { gra: 'GRA na następnym', czeka: 'zakład ustawiony', trig: 'STEP otwarty', wait: 'czekam na STEP' };
+function bandOrder() { return R.rules.map((_, i) => i).reverse(); }
+function playLists() {   // modele w kryteriach, które są w cyklu zaraz po BUST-cie, w grupach wg cykli
+  const out = lastEval.out, B = R.rules.map(() => []), pre = [];
+  const mine = new Set(getMy().map(myIndex).filter(k => k >= 0));
+  out.forEach((r, k) => {
+    if (!qual(r) || !afterB(r) || mine.has(k)) return;
+    B[bandOf(r)].push(k);
+  });
+  const po = { gra: 0, czeka: 1, trig: 2, wait: 3 };
+  const cmp = (a, b) => (po[phaseOf(out[a])] - po[phaseOf(out[b])]) || ((out[a].ph === 2 ? out[a].wz : 1e9) - (out[b].ph === 2 ? out[b].wz : 1e9)) || (out[b].bs - out[a].bs) || (rankKey(out[a]) - rankKey(out[b]));   // najbliższa gra pierwsza
+  B.forEach(l => l.sort(cmp));
+  return { B, pre };
+}
+function myCardsHtml(out, my, myOn, selMine) {
+    let s = `<div class="sec mine"><div class="sh"><b>▶ MOJE GRY</b><span class="m">${myOn.length} w grze · do WIN albo kroku 8</span></div>`;
+    my.forEach(({ g, k }) => {
+      const r = out[k], res = myResult(g, r), key = specKey(g.m);
+      const head = `<div class="myh">od w.${g.start + 1} · wejście k${g.s0} ${ST[g.s0 - 1]} zł</div>`;
+      const sel = selMine === k ? ' msel' : '';
+      if (res) s += `<div class="mc ${res.win ? 'mwin' : 'mbust'}${sel}" data-mk="${k}"><div class="h"><span class="id">${mid(k, P[k])}</span><span class="stk">${res.win ? 'WIN' : 'BUST'}</span></div>${head}
+        <div class="st ${res.win ? 'pw' : 'pb'}">${res.win ? `WIN na kroku ${res.k} (${ST[res.k - 1]} zł) w w.${res.row + 1}` : `BUST na kroku 8 w w.${res.row + 1}`}<span class="s">Twój wynik od wejścia: ${res.pnl >= 0 ? '+' : ''}${res.pnl} zł</span></div>
+        <button class="btn more" data-stop="${esc(key)}">Zakończ — usuń z MOJE GRY</button></div>`;
+      else s += card(k, P[k], r, phaseOf(r)).replace('<div class="rule">', head + '<div class="rule">').replace('class="mc ', `class="mc${sel} `).replace('dotknij → TABELA ·', 'dotknij → tabela w MOJE ·') +
+        `<button class="btn more" data-stop="${esc(key)}" style="margin:-2px 0 8px">Przestań śledzić ${mid(k, P[k])}</button>`;
+    });
+  return s + '</div>';
+}
+// ---- statystyka powtórek: w okresie sprawdzenia, po BUST-cie — czy następny cykl też był BUST ----
+function repStats(sel) {   // sel(r) → bool; zwraca {models, zones, broken}
+  const o = { models: 0, zones: 0, broken: 0 };
+  if (!lastEval) return o;
+  lastEval.out.forEach(r => { if (sel(r)) { o.models++; o.zones += r.zo; o.broken += r.zb; } });
+  return o;
+}
+const pct = (a, b) => b ? (100 * a / b).toLocaleString('pl', { maximumFractionDigits: 1 }) + '%' : '—';
+function learnOk(r) { return r.bi >= R.minBust && r.cli <= R.maxClose && r.ci >= Math.round(R.minCyc * R.split); }   // te same kryteria, tylko na nauce (pierwsze 65%)
+function repHtml(full) {
+  const all = repStats(r => r.ci > 0), sel = repStats(learnOk), q = repStats(qual);
+  const ct = (CFG.test || {})[tgt] || [];
+  let h = `<div class="note"><b>Czy brak powtórek się utrzymuje?</b> Okres sprawdzenia = ostatnie ${Math.round(100 - 100 * R.split)}% kodów (od w.${Math.floor(codes.length * R.split) + 1}).
+    Liczymy BUST-y w tym okresie i ile razy <b>od razu następny cykl też był BUST</b>.<table style="margin-top:6px"><tr><th>modele</th><th>ile</th><th>BUST-y</th><th>BUST po BUST</th></tr>
+    <tr><td>cała pula appki</td><td>${all.models.toLocaleString('pl')}</td><td>${all.zones.toLocaleString('pl')}</td><td>${all.broken} · <b>${pct(all.broken, all.zones)}</b></td></tr>
+    <tr><td>kryteria spełnione na nauce (pierwsze ${Math.round(100 * R.split)}%)</td><td>${sel.models.toLocaleString('pl')}</td><td>${sel.zones.toLocaleString('pl')}</td><td>${sel.broken} · <b>${pct(sel.broken, sel.zones)}</b></td></tr>
+    ${full ? `<tr><td>w kryteriach teraz (cała historia)</td><td>${q.models.toLocaleString('pl')}</td><td>${q.zones.toLocaleString('pl')}</td><td>${q.broken} · <b>${pct(q.broken, q.zones)}</b></td></tr>` : ''}</table>`;
+  if (full && ct.length) h += `<div style="margin-top:8px"><b>Test z chmury</b> (${(POOLS[tgt].nCfg || 0).toLocaleString('pl')} losowych modeli, baza do Nr ${POOLS[tgt].seedN}, wybór tylko na nauce):</div><table><tr><th>modele</th><th>BUST-y</th><th>BUST po BUST</th></tr>` +
+    ct.map(t => `<tr><td>${esc(t.label)}</td><td>${t.zones.toLocaleString('pl')}</td><td><b>${pct(t.broken, t.zones)}</b></td></tr>`).join('') + `</table>`;
+  return h + `<div class="hint">Uwaga: pula appki była wybrana na całej historii (razem z okresem sprawdzenia), więc jej procenty są zaniżone. Uczciwy wynik daje test z chmury: tam wybór był robiony tylko na nauce.
+    Jeśli wybrane modele nie mają wyraźnie mniej BUST-ów po BUST-cie niż wszystkie modele, to historia bez powtórek nie chroni przed BUST-em w przyszłości.</div></div>`;
+}
+function renderGra() {
+  const n = codes.length;
+  if (!lastEval) return `<div class="ban idle">Liczę ${P.length.toLocaleString('pl')} modeli…</div>`;
+  const out = lastEval.out, { B } = playLists();
+  let qn = 0, an = 0; out.forEach(r => { if (qual(r)) { qn++; if (afterB(r)) an++; } });
+  const my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0);
+  const myOn = my.filter(x => !myResult(x.g, out[x.k]));
+  const graAll = (onlyMine ? [] : [].concat(...B.filter((_, i) => BANDS.includes(i))).filter(k => phaseOf(out[k]) === 'gra'))
+    .concat(myOn.filter(x => phaseOf(out[x.k]) === 'gra').map(x => x.k));
+  const sum = graAll.reduce((s, k) => s + ST[out[k].bs], 0);
+  let h = graAll.length
+    ? `<div class="ban bet"><div class="big">NASTĘPNY WIERSZ (w.${n + 1}) = GRA na ${tgt}</div><div class="sub">${graAll.length} model(i) w cyklu po BUST-cie · suma stawek ${sum} zł${busy ? ' · przeliczam…' : ''}</div></div>`
+    : `<div class="ban idle">w.${n + 1}: brak zakładu modeli po BUST-cie${busy ? ' · przeliczam…' : ''}</div>`;
+  h += lastCodes();
+  h += `<div class="flt"><span>widok:</span><button class="chip ${afterOnly ? 'on' : ''}" data-only="1">tylko GRA na następnym · ${graAll.length}</button>` +
+    `<button class="chip mine ${onlyMine ? 'on' : ''}" data-mine="1">▶ MOJE MODELE · ${my.length}</button></div>`;
+  const shown = i => R.rules[i][0] !== null || B[i].length > 0;
+  if (!onlyMine) h += `<div class="flt"><span>cykle:</span>${bandOrder().filter(shown).map(i => `<button class="chip ${BANDS.includes(i) ? 'on' : ''}" data-b="${i}">${bandShort(i)} · ${B[i].length}</button>`).join('')}</div>`;
+  if (onlyMine) h += `<div class="note"><b>MOJE MODELE</b> — tylko modele, które grasz (${myOn.length} w grze${my.length > myOn.length ? `, ${my.length - myOn.length} zakończone` : ''}). Dotknij „▶ MOJE MODELE” jeszcze raz, żeby wrócić do wszystkich.</div>` +
+    (my.length ? '' : `<div class="empty" style="padding:10px 4px">Nie grasz jeszcze żadnego modelu. Przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`);
+  else h += `<div class="note">W kryteriach: <b>${qn.toLocaleString('pl')}</b> z ${P.length.toLocaleString('pl')} modeli (min ${R.minCyc} cykli, min ${R.minBust} BUST, BUST od razu po BUST-cie max ${R.maxClose}×).
+    <b>Tuż po BUST-cie: ${an}</b> — ich ostatni cykl skończył się BUST-em, a teraz trwa następny cykl (gra od kroku 1 do WIN albo kroku 8). W grupach wg liczby cykli, najbliższa gra pierwsza. Dotknij karty → TABELA.</div>`;
+  if (my.length) h += myCardsHtml(out, my, myOn);
+  for (const i of bandOrder()) {
+    if (onlyMine) break;
+    if (!BANDS.includes(i) || !shown(i)) continue;
+    const L = B[i].filter(k => !afterOnly || phaseOf(out[k]) === 'gra'), cap = bandCap[i] || 15, isStar = R.rules[i][0] === null;
+    const cnt = { gra: 0, czeka: 0, trig: 0, wait: 0 }; B[i].forEach(k => cnt[phaseOf(out[k])]++);
+    let s = `<div class="sec${isStar ? ' star' : ''}"><div class="sh"><b>${bandName(i)}</b><span class="m">${B[i].length} po BUST-cie</span></div>
+      <div class="hint" style="margin:-2px 2px 6px">GRA na następnym ${cnt.gra} · zakład ustawiony ${cnt.czeka} · STEP otwarty ${cnt.trig} · czekam na STEP ${cnt.wait}</div>`;
+    if (!L.length) s += `<div class="empty">${afterOnly ? 'żaden model z tej grupy nie gra na następnym wierszu' : 'teraz żaden model z tej grupy nie jest tuż po BUST-cie'}</div>`;
+    L.slice(0, cap).forEach(k => s += card(k, P[k], out[k], phaseOf(out[k])));
+    if (L.length > cap) s += `<button class="btn more" data-more="${i}">Pokaż więcej z tej grupy (${L.length - cap})</button>`;
+    h += s + '</div>';
+  }
+  if (!onlyMine) h += repHtml(false);
+  return h;
+}
+function openTab(k) { selK = k; tabN = 150; tabScroll = true; hlBet = -1; liveOn = false; view = 'tab'; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'tab')); scrollTo(0, 0); render(); }
+function needLabels() {
+  if (selK === null || selK >= P.length) return;
+  const key = selK + '|' + codes.length + '|' + tgt + '|' + JSON.stringify(R) + '|' + P.length;
+  if (key === labFor) return;
+  labFor = key; lab = null; labId++;
+  W.postMessage({ type: 'label', id: labId, m: P[selK], R });
+}
+// ---- opis prostym językiem: wzorzec → konkretne kody ----
+const pm = (p, c) => !!c && p.split('∪').some(q => q.length === 3 && [...q].every((x, i) => x === 'x' || x === c[i]));
+const codesOf = p => AL.filter(c => pm(p, c)).join(', ');
+const pd = p => p;   // symbole z x zostają (np. x1x, 00x)
+const partsOf = pred => pred.split(' → ');
+function explainHtml(m) {
+  const sp = partsOf(m[1]), tp = partsOf(m[3]), off = m[4];
+  const step = m[0] === 'S'
+    ? (m[2] > 1 ? `<b>${m[2]} kody pod rząd</b>, każdy z grupy <b>${m[1]}</b>` : `<b>1 kod</b> z grupy <b>${m[1]}</b>`)
+    : `<b>2 kody pod rząd</b>: najpierw <b>${sp[0]}</b>, zaraz po nim <b>${sp[1]}</b>`;
+  const trig = tp.length === 1 ? `kod <b>${tp[0]}</b>`
+    : `<b>2 kody pod rząd</b>: najpierw <b>${tp[0]}</b>, zaraz po nim <b>${tp[1]}</b>`;
+  const gap = off === 1 ? 'grasz <b>od razu na następnym wierszu</b> po TRIGGERZE'
+    : `po TRIGGERZE <b>przeczekaj ${off - 1} ${off - 1 === 1 ? 'wiersz' : off - 1 <= 4 ? 'wiersze' : 'wierszy'}</b>, grasz na <b>${off}. wierszu</b> po nim`;
+  return `<div class="expl"><div class="et">Jak działa ten model</div><ol>
+    <li><b>STEP</b> — czekaj, aż wypadną ${step}.</li>
+    <li><b>TRIGGER</b> — od wiersza po STEP czekaj na ${trig}. Inne kody po drodze nic nie zmieniają.</li>
+    <li><b>ZAKŁAD</b> — ${gap}. Grasz na <b>${tgt}</b>, stawka z progresji 8 · 8 · 16 · 32 · <b>64 · 128 · 256</b> · 512 zł.</li>
+    <li><b>Wersja A (SZUKAJ BUST)</b> — grasz tylko <b>cykl zaraz po BUST-cie</b> (od kroku 1 do WIN albo kroku 8). Ryzyko = BUST od razu po BUST-cie; model w kryteriach miał takich powtórek najwyżej ${R.maxClose}.</li>
+    <li><b>Po zakładzie</b> wszystko od nowa: znowu czekasz na STEP${sp.length === 2 ? ' (kod z wiersza zakładu może już być 1. kodem nowego STEP-u)' : ' (liczony od wiersza po zakładzie)'}. WIN → progresja wraca na krok 1; przegrana → następny krok (zostaje do kolejnego zakładu); przegrana na kroku 8 = BUST.</li>
+  </ol></div>`;
+}
+// skąd zakład na wierszu b: TRIGGER (wiersz, kody) + offset; skąd stawka (poprzedni zakład)
+// łańcuch zakładu na wierszu b: wiersze STEP, TRIGGER, czekania, „następny”, GRA
+function betChain(b) {
+  const m = P[selK], off = m[4], t = b - off, sL = partsOf(m[1]).length, tL = partsOf(m[3]).length;
+  let s = -1; for (let j = t - 1; j >= 0; j--) if (lab.K[j] === 3) { s = j; break; }
+  const step = s < 0 ? [] : sL === 2 ? [s - 1, s] : Array.from({ length: m[2] }, (_, q) => s - m[2] + 1 + q);
+  const trig = tL === 2 ? [t - 1, t] : [t];
+  const wait = []; for (let j = t + 1; j < b; j++) wait.push(j);
+  return { step, trig, wait, pre: b - 1, bet: b };
+}
+function betOf(i) {   // który zakład wskazuje wiersz i (dla kliknięcia)
+  const K = lab.K;
+  if (K[i] >= 6 && K[i] <= 8) return i;
+  if (i + 1 < codes.length && K[i + 1] >= 6 && K[i + 1] <= 8) return i + 1;
+  if ((K[i] === 4 || K[i] === 5) && lab.B[i] < codes.length) return lab.B[i];
+  return -1;
+}
+const rng = a => a.length ? (a.length === 1 || a[0] === a[a.length - 1] ? `w.${a[0] + 1}` : `w.${a[0] + 1}–${a[a.length - 1] + 1}`) : '—';
+// ---- stan bieżący: ile wierszy NAJWCZEŚNIEJ do gry (dokładnie wg reguł modelu, z uwzględnieniem STEP-u, który już się wydarzył) ----
+function minToBet(m, r) {
+  const n = codes.length, sp = partsOf(m[1]), tp = partsOf(m[3]), x = m[2], off = m[4];
+  if (r.ph === 2) return { d: r.wz - (n - 1), trigAt: null };
+  const A = AL.length, S = sp.map(p => AL.map(c => pm(p, c))), T = tp.map(p => AL.map(c => pm(p, c)));
+  const hitP = (Pt, prev, c) => Pt.length === 1 ? Pt[0][c] : (prev >= 0 && Pt[0][prev] && Pt[1][c]);
+  let q = [[r.ph, r.cnt, AL.indexOf(codes[n - 1])]]; const seen = new Set();
+  for (let d = 1; d <= 80 && q.length; d++) {
+    const nq = [];
+    for (const [st, cnt, prev] of q) for (let c = 0; c < A; c++) {
+      if (st === 1) { if (hitP(T, prev, c)) return { d: d + off, trigAt: d }; const k = '1|0|' + c; if (!seen.has(k)) { seen.add(k); nq.push([1, 0, c]); } }
+      else { let s2 = 0, c2 = 0; if (hitP(S, prev, c)) { c2 = cnt + 1; if (c2 >= x) { s2 = 1; c2 = 0; } } const k = s2 + '|' + c2 + '|' + c; if (!seen.has(k)) { seen.add(k); nq.push([s2, c2, c]); } }
+    }
+    q = nq;
+  }
+  return null;
+}
+function liveChain(m, r) {   // wiersze bieżącego łańcucha (po ostatnim zakładzie)
+  const n = codes.length, sp = partsOf(m[1]), tp = partsOf(m[3]), x = m[2], off = m[4], last = n - 1;
+  const o = { step: [], stepPart: [], trig: [], trigPart: [], wait: [] };
+  const stepRows = s => sp.length === 2 ? [s - 1, s] : Array.from({ length: x }, (_, q) => s - x + 1 + q);
+  if (r.ph === 2) {
+    const t = r.wz - off; let s = -1; for (let j = t - 1; j >= 0; j--) if (lab.K[j] === 3) { s = j; break; }
+    if (s >= 0) o.step = stepRows(s);
+    o.trig = tp.length === 2 ? [t - 1, t] : [t];
+    for (let j = t + 1; j <= last; j++) o.wait.push(j);
+  } else if (r.ph === 1) {
+    o.step = stepRows(r.srow);
+    if (tp.length === 2 && pm(tp[0], codes[last]) && last >= r.srow) o.trigPart = [last];
+  } else {
+    if (sp.length === 1 && r.cnt > 0) for (let j = last - r.cnt + 1; j <= last; j++) o.stepPart.push(j);
+    if (sp.length === 2 && pm(sp[0], codes[last])) o.stepPart = [last];
+  }
+  return o;
+}
+function liveHtml(m, r) {
+  const n = codes.length, x = m[2], sp = partsOf(m[1]), tp = partsOf(m[3]), L = liveChain(m, r), mb = minToBet(m, r);
+  const when = mb ? `w.${n + mb.d} — <b>za ${mb.d} ${mb.d === 1 ? 'wiersz' : mb.d <= 4 ? 'wiersze' : 'wierszy'}</b>` : '—';
+  let what;
+  if (r.ph === 2) what = `TRIGGER był (${rng(L.trig)}) → <b>GRA k${r.bs + 1} ${ST[r.bs]} zł na ${tgt}</b> na ${when}`;
+  else if (r.ph === 1) {
+    const tc = trigNext(m);
+    what = `STEP spełniony (${rng(L.step)}) → czekam na TRIGGER <b>${m[3]}</b>` + (L.trigPart.length ? ` · 1. kod TRIGGER-a już jest (w.${n})` : '') +
+      `<br>${tc.length ? `jeśli w.${n + 1} = <b>${tc.join(', ')}</b> → ` : ''}najwcześniej GRA na ${when}`;
+  } else {
+    const need = sp.length === 2 ? (L.stepPart.length ? `brakuje 2. kodu STEP-u (${sp[1]})` : `potrzeba 2 kodów STEP-u: ${sp[0]} → ${sp[1]}`)
+      : `STEP ${r.cnt}/${x}${r.cnt ? ` (${rng(L.stepPart)})` : ''} — brakuje ${x - r.cnt} ${x - r.cnt === 1 ? 'kodu' : 'kodów'} z grupy ${m[1]}`;
+    what = `czekam na STEP · ${need}<br>potem TRIGGER ${m[3]}, potem +${m[4]} → najwcześniej GRA na ${when}`;
+  }
+  return `<b>TERAZ (krok ${r.bs + 1}, ${ST[r.bs]} zł):</b> ${what}<div class="hlrow">` +
+    (L.step.length ? `<span class="sw s1">STEP ${rng(L.step)}</span>` : '') + (L.stepPart.length ? `<span class="sw s1p">STEP w toku ${rng(L.stepPart)}</span>` : '') +
+    (L.trig.length ? `<span class="sw s2">TRIGGER ${rng(L.trig)}</span>` : '') + (L.trigPart.length ? `<span class="sw s2p">1. kod TRIGGER-a w.${n}</span>` : '') +
+    (L.wait.length ? `<span class="sw s3">czekanie ${rng(L.wait)}</span>` : '') + `</div>`;
+}
+function applyHL(el) {
+  el.querySelectorAll('tr[data-i]').forEach(r => r.classList.remove('hl-step', 'hl-trig', 'hl-wait', 'hl-pre', 'hl-win', 'hl-loss', 'hl-spart', 'hl-tpart'));
+  const box = el.querySelector('#hlInfo'); if (!box) return;
+  const add = (arr, cl) => arr.forEach(j => { const r = el.querySelector(`tr[data-i="${j}"]`); if (r) r.classList.add(cl); });
+  if (hlBet < 0 || !lab || !(lab.K[hlBet] >= 6 && lab.K[hlBet] <= 8)) {   // domyślnie: bieżący łańcuch
+    const m = P[selK], r = lastEval && lastEval.out[selK]; if (!lab || !r) { box.innerHTML = ''; return; }
+    if (!liveOn) { box.innerHTML = ''; return; }   // schowane — otwiera dotknięcie wiersza
+    const L = liveChain(m, r); add(L.step, 'hl-step'); add(L.stepPart, 'hl-spart'); add(L.trig, 'hl-trig'); add(L.trigPart, 'hl-tpart'); add(L.wait, 'hl-wait');
+    box.innerHTML = liveHtml(m, r) + '<div class="hl0" style="margin-top:4px;text-align:right">dotknij tutaj albo obramowanego wiersza, żeby zamknąć</div>';
+    box.onclick = () => { liveOn = false; applyHL(el); }; return;
+  }
+  const c = betChain(hlBet), win = lab.K[hlBet] === 6, a = lab.A[hlBet];
+  add(c.step, 'hl-step'); add(c.trig, 'hl-trig'); add(c.wait, 'hl-wait'); add([c.pre], 'hl-pre'); add([c.bet], win ? 'hl-win' : 'hl-loss');
+  const res = win ? 'WIN' : lab.K[hlBet] === 8 ? 'BUST' : 'przegrana';
+  box.innerHTML = `<b>Zakład w.${hlBet + 1}: GRA k${a} ${ST[a - 1]} zł → ${res}</b><div class="hlrow">
+    <span class="sw s1">STEP ${rng(c.step)}</span><span class="sw s2">TRIGGER ${rng(c.trig)}</span>${c.wait.filter(j => j !== c.pre).length ? `<span class="sw s3">czekanie ${rng(c.wait.filter(j => j !== c.pre))}</span>` : ''}<span class="sw s4">▶ następny w.${c.pre + 1}</span><span class="sw ${win ? 's5' : 's6'}">GRA w.${hlBet + 1}</span></div>
+    <button class="btn more" id="hlClr" style="margin-top:6px">Zamknij</button>`;
+  el.querySelector('#hlClr').onclick = e => { e.stopPropagation(); hlBet = -1; liveOn = false; applyHL(el); };
+  box.onclick = () => { hlBet = -1; liveOn = false; applyHL(el); };
+}
+function betWhy(b) {
+  const m = P[selK], off = m[4], t = b - off, tp = partsOf(m[3]), a = lab.A[b];
+  const tc = tp.length === 2 ? `${codes[t - 1]} + ${codes[t]}` : codes[t];
+  let prev = -1; for (let j = t - 1; j >= 0; j--) if (lab.K[j] >= 6 && lab.K[j] <= 8) { prev = j; break; }
+  const stake = a === 1
+    ? (prev < 0 ? 'krok 1 — początek progresji' : `krok 1, bo poprzedni zakład (w.${prev + 1}) ${lab.K[prev] === 6 ? 'wygrał' : 'zakończył się BUST-em'}`)
+    : `krok ${a}, bo poprzedni zakład (w.${prev + 1}, k${a - 1}) przegrał`;
+  return { trig: `TRIGGER na w.${t + 1} (${tc} = ${m[3]}) + ${off} ${off === 1 ? 'wiersz' : off <= 4 ? 'wiersze' : 'wierszy'} = w.${b + 1}`, stake };
+}
+// etykieta wiersza: [klasa, tekst, wyjaśnienie]
+function labCell(i) {
+  const K = lab.K[i], a = lab.A[i], b = lab.B[i], m = P[selK], c = codes[i], prev = codes[i - 1];
+  const sp = partsOf(m[1]), tp = partsOf(m[3]), Kn = lab.K[i + 1];
+  // wiersz-partner: 1. kod układu STEP / TRIGGER (sam w sobie wygląda na „czekam”)
+  if (sp.length === 2 && Kn === 3 && (K === 0 || K === 9)) return ['L2', 'STEP — 1. kod układu', `${c} pasuje do ${pd(sp[0])}; następny musi być z ${pd(sp[1])}`];
+  if (tp.length === 2 && Kn === 4 && K === 1) return ['L4b', 'TRIGGER — 1. kod układu', `${c} pasuje do ${pd(tp[0])}; następny musi być z ${pd(tp[1])}`];
+  const trig1 = tp.length === 2 && Kn === 4 ? ` · ten kod to też 1. kod TRIGGER-a (${pd(tp[0])})` : '';
+  const step1 = sp.length === 2 && Kn === 3 ? ` · ten kod to też 1. kod nowego STEP-u (${pd(sp[0])})` : '';
+  switch (K) {
+    case 0: return ['L0', 'czekam na STEP', sp.length === 2 ? `${c} to nie ${sp[0]} albo następny nie był ${sp[1]}` : `${c} nie jest z grupy ${m[1]}`];
+    case 1: return ['L1', 'STEP otwarty · czekam na TRIGGER', `${c} to nie TRIGGER (${m[3]})`];
+    case 2: return ['L2', `STEP ${a}/${m[2]}`, `${c} jest z grupy ${m[1]} — potrzeba ${m[2]} pod rząd`];
+    case 3: return ['L3', m[0] === 'S' && m[2] > 1 ? `STEP ${a}/${m[2]} — SPEŁNIONY` : 'STEP — SPEŁNIONY',
+      (sp.length === 2 ? `${prev} + ${c} = układ ${m[1]}` : `${c} jest z grupy ${m[1]}`) + ` → od następnego wiersza czekam na TRIGGER` + trig1];
+    case 4: return ['L4', `TRIGGER → zakład k${a} ${ST[a - 1]} zł na w.${b + 1}`,
+      (tp.length === 2 ? `${prev} + ${c} = układ ${m[3]}` : `${c} pasuje do ${pd(tp[0])}`) + ` · gra ${m[4]} ${m[4] === 1 ? 'wiersz' : m[4] <= 4 ? 'wiersze' : 'wierszy'} dalej`];
+    case 5: return ['L5', `czekam na grę (${b - i} do zakładu)`, `zakład k${a} ${ST[a - 1]} zł na w.${b + 1}`];
+    case 6: case 7: case 8: { const w = betWhy(i), base = labCellBet(i, K, a, b, c, m, step1); return [base[0], base[1], base[2] + ` · zakład z ${w.trig}`]; }
+    default: return ['L9', 'seria STEP przerwana — licznik → 0', `${c} nie jest z grupy ${m[1]}`];
+  }
+}
+function labCellBet(i, K, a, b, c, m, step1) {
+  switch (K) {
+    case 6: return ['L6', `GRA k${a} ${ST[a - 1]} zł → WIN +${b} zł${lab.Q[i] & 2 ? ' · WIN po BUST-cie ✓' : ''}`, `${c} to ${tgt} ✓ · progresja wraca na krok 1 · znowu czekam na STEP` + step1];
+    case 7: return ['L7', `GRA k${a} ${ST[a - 1]} zł → przegrana`, `${c} to nie ${tgt} · następny zakład k${a + 1} ${ST[a]} zł · znowu czekam na STEP` + step1];
+    case 8: { const g = bustGap(i);
+      return [lab.Q[i] & 4 ? 'L8 Lrep' : 'L8', lab.Q[i] & 4 ? `GRA k8 512 zł → BUST ${b} zł · BUST OD RAZU PO BUST-CIE ✖` : `GRA k8 512 zł → BUST ${b} zł`,
+        `${c} to nie ${tgt} na kroku 8 · progresja wraca na krok 1` + (g ? ` · ${g === 1 ? 'poprzedni cykl też był BUST' : `poprzedni BUST ${g} ${cyW(g)} wcześniej`}` : ' · pierwszy BUST modelu') + ' · następny cykl = cykl po BUST-cie' + step1]; }
+  }
+}
+function bustGap(i) {   // odstęp (w cyklach) BUST-u na wierszu i od poprzedniego BUST-u; 0 = pierwszy
+  if (!lab._gap) { const g = new Map(); let cyc = 0, lb = -1; for (let j = 0; j < codes.length; j++) { const t = lab.K[j]; if (t === 6) cyc++; else if (t === 8) { g.set(j, lb >= 0 ? cyc - lb : 0); lb = cyc; cyc++; } } lab._gap = g; }
+  return lab._gap.get(i) || 0;
+}
+function modelStats() {   // z etykiet wybranego modelu (całe dzieje)
+  const K = lab.K, A = lab.A, n = codes.length, ends = [];
+  let bets = 0; const wk = new Array(9).fill(0);
+  for (let i = 0; i < n; i++) {
+    const t = K[i];
+    if (t === 6) { bets++; ends.push([1, i, A[i]]); wk[A[i]]++; } else if (t === 7) bets++; else if (t === 8) { bets++; ends.push([2, i, 8]); }
+  }
+  const cyc = ends.length, bi = []; ends.forEach((e, j) => { if (e[0] === 2) bi.push(j); });
+  let run = 0, maxRun = 0, twoRow = []; ends.forEach(e => { if (e[0] === 2) { run++; maxRun = Math.max(maxRun, run); if (run >= 2) twoRow.push(e[1]); } else run = 0; });
+  let minGap = null; for (let j = 1; j < bi.length; j++) { const g = bi[j] - bi[j - 1]; if (minGap === null || g < minGap) minGap = g; }
+  const lastB = bi.length ? bi[bi.length - 1] : -1;
+  return { bets, cyc, w: cyc - bi.length, b: bi.length, wk, maxRun, twoRow, minGap,
+    lastBRow: lastB >= 0 ? ends[lastB][1] : null, sinceB: lastB >= 0 ? cyc - 1 - lastB : null,
+    k5: ends.filter(e => e[2] >= 5).length, k5w: ends.filter(e => e[0] === 1 && e[2] >= 5).length, last: ends.slice(-16) };
+}
+function statsHtml(r) {
+  if (!lab) return '';
+  const S = modelStats(), n = codes.length;
+  const lb = S.lastBRow === null ? '<b class="ok">nie było BUST</b>' : `<b>${S.sinceB} cykli temu</b><span class="n">w.${S.lastBRow + 1} · ${n - 1 - S.lastBRow} kodów temu</span>`;
+  const two = r && r.pb ? `<b class="bad">${r.pb}×${S.twoRow.length ? ` (ostatnio w.${S.twoRow[S.twoRow.length - 1] + 1})` : ''}</b>` : '<b class="ok">ani razu</b>';
+  const row = (k, v) => `<span class="k">${k}</span><div class="v">${v}</div>`;
+  return `<div class="stats">
+    ${row('cykle (gry do WIN / BUST)', `<b>${S.cyc}</b>`)}
+    ${row('zakłady (wszystkie kroki)', `<b>${S.bets}</b>`)}
+    ${row('WIN', `<b class="ok">${S.w}</b>`)}
+    ${row('BUST (przegrany krok 8)', `<b class="${S.b ? 'bad' : 'ok'}">${S.b}</b>`)}
+    ${row('ostatni BUST', `${lb}`)}
+    ${row('BUST od razu po BUST-cie (powtórka)', `${two}`)}
+    ${row('cykl po BUST-cie skończył się WIN', `<b class="ok">${r ? r.pw : ''}</b>`)}
+    ${row('BUST średnio co', `<b>${S.b ? Math.round(S.cyc / S.b) + ' cykli' : '—'}</b>`)}
+    ${row('najdłuższa seria BUST pod rząd', `<b>${S.maxRun}</b>`)}
+    ${row('najbliższe 2 BUST-y', `<b>${S.minGap === null ? '—' : 'co ' + S.minGap + (S.minGap === 1 ? ' cykl (pod rząd)' : S.minGap <= 4 ? ' cykle' : ' cykli')}</b>`)}
+    ${row('cykle, które doszły do k5 (64 zł)', `<b>${S.k5} → WIN ${S.k5w} · BUST ${S.b}${r && r.k5 > S.k5 ? ` · +1 w toku (teraz k${r.bs + 1})` : ''}</b>`)}
+    ${row('WIN na krokach k1…k8', `<b>${S.wk.slice(1).join(' · ')}</b>`)}
+    ${row('bilans modelu (K8 od k1)', `<b class="${r && r.pnl >= 0 ? 'ok' : 'bad'}">${r ? (r.pnl >= 0 ? '+' : '') + r.pnl + ' zł' : ''}</b>`)}
+  </div>${r ? checkTxt(r) : ''}<div class="hint" style="margin-top:6px">Ostatnie ${S.last.length} cykli (najnowszy z prawej):</div>
+  <div class="seq">${S.last.map(e => e[0] === 1 ? `<i>W${e[2]}</i>` : '<i class="b">BUST</i>').join('')}</div>`;
+}
+let tabMine = false;   // TABELA wewnątrz zakładki MOJE (bez listy wyboru — wybór kartą)
+function openMine(k) { selK = k; tabN = 150; tabScroll = true; hlBet = -1; liveOn = false; view = 'moje'; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'moje')); scrollTo(0, 0); render(); }
+function renderMoje() {
+  if (!lastEval) return `<div class="ban idle">Liczę…</div>`;
+  const out = lastEval.out, my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0), myOn = my.filter(x => !myResult(x.g, out[x.k]));
+  if (!my.length) return `<div class="note"><b>MOJE MODELE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`;
+  if (!my.some(x => x.k === selK)) { selK = (myOn[0] || my[0]).k; needLabels(); }
+  tabMine = true;
+  const h = myCardsHtml(out, my, myOn, selK) + `<div class="note" style="margin-top:4px">Tabela modelu <b>${mid(selK, P[selK])}</b> — dotknij innej karty wyżej, żeby zmienić model.</div>` + renderTab();
+  tabMine = false;
+  return h;
+}
+function renderTab() {
+  const n = codes.length;
+  const pl = lastEval ? playLists() : { B: R.rules.map(() => []), pre: [] };
+  if (selK === null || selK >= P.length) { const f = [].concat(...bandOrder().map(i => pl.B[i])); selK = f.length ? f[0] : 0; }
+  const o = lastEval ? lastEval.out : null;
+  needLabels();
+  const m = P[selK], r = lastEval ? lastEval.out[selK] : null;
+  let h = '';   // statystyki schowane — otwiera je przytrzymanie wiersza tabeli albo karty modelu
+  if (!lab) return h + `<div class="ban idle">Nanoszę etykiety…</div>`;
+  let next = '';
+  if (r) {
+    if (r.ph === 2) next = r.wz === n ? `GRAJ k${r.bs + 1} ${ST[r.bs]} zł na ${tgt}` : `zakład k${r.bs + 1} ${ST[r.bs]} zł na w.${r.wz + 1}`;
+    else if (r.ph === 1) { const tc = trigNext(m); next = tc.length ? `TRIGGER jeśli wpadnie ${tc.join(', ')} → k${r.bs + 1} ${ST[r.bs]} zł na w.${n + 1 + m[4]}` : 'czekam na TRIGGER'; }
+    else next = 'czekam na STEP';
+    if (r.ph !== 2 || r.wz !== n) { const mb = minToBet(m, r); if (mb) next += r.ph === 2 ? ` — za ${mb.d}` : ` · najwcześniej GRA na w.${n + mb.d} (za ${mb.d})`; }
+  }
+  const myNext = r && r.ph === 2 && r.wz === n && afterB(r) && qual(r);
+  const nextRow = `<tr class="nextr" id="nextRow"><td class="nr">${n + 1}</td><td class="kd">?</td><td class="g ${myNext ? 'my' : 'dim'}">${myNext ? 'GRA ' + ST[r.bs] : ''}</td><td><span class="lab Lnext">następny: ${esc(next)}</span></td></tr>`;
+  const R2 = [];
+  let shown = 0, i = n - 1;
+  for (; i >= 0 && shown < tabN; i--) {
+    const K = lab.K[i], c = labCell(i), a = lab.A[i];
+    if (tabEv && (c[0] === 'L0' || c[0] === 'L1')) continue;
+    const nb = i + 1 < n && lab.K[i + 1] >= 6 && lab.K[i + 1] <= 8;      // następny wiersz = zakład
+    const na = nb ? lab.A[i + 1] : 0;
+    let g = '', gc = 'dim';
+    if (K >= 6 && K <= 8) { const my = (lab.Q[i] & 3) === 3; g = (my ? 'GRA ' : 'k' + a + ' ') + ST[a - 1]; gc = my ? 'my' : 'dim'; }
+    R2.push(`<tr data-i="${i}" class="${i >= SEED_N ? 'nw' : ''}${nb ? ' pre' : ''}"><td class="nr">${i + 1}</td><td class="kd ${isHit(codes[i]) ? 'h' : ''}">${codes[i]}</td><td class="g ${gc}">${g}</td><td>` +
+      (nb ? (w => `<span class="lab Lnx">▶ NASTĘPNY WIERSZ = GRA k${na} ${ST[na - 1]} zł na ${tgt}<span class="s">dlaczego: ${esc(w.trig)} · ${esc(w.stake)}</span><span class="s tp">👆 dotknij — podświetlę STEP i TRIGGER tej gry</span></span>`)(betWhy(i + 1)) : '') +
+      `<span class="lab ${c[0]}">${c[1]}<span class="s">${esc(c[2] || '')}</span></span></td></tr>`);
+    shown++;
+  }
+  const more = i >= 0 ? `<button class="btn more" id="moreBtn">Pokaż starsze (+150)</button>` : '';
+  const ord = `<div class="ordr"><button class="chip ${tabAsc ? 'on' : ''}" data-ord="1">↓ czas płynie w dół</button><button class="chip ${tabAsc ? '' : 'on'}" data-ord="0">najnowsze u góry</button><label class="hint evl"><input type="checkbox" id="evChk" ${tabEv ? 'checked' : ''}> tylko zdarzenia</label></div>`;
+  const body = tabAsc ? R2.reverse().join('') + nextRow : nextRow + R2.join('');
+  h += `<div class="sec ${tabAsc ? 'asc' : 'desc'}">${ord}<div class="stk2"><div id="hlInfo" class="hlinfo"></div></div>${tabAsc ? more : ''}<table class="tbl"><tr><th>Nr</th><th>Kod</th><th>GRA</th><th>Stan / rola</th></tr>${body}</table>`;
+  if (!tabAsc) h += more;
+  h += `<div class="hint">${tabAsc ? 'Najstarsze u góry, najnowsze na dole — czytasz w dół tak jak płyną kody; na samym dole wiersz „następny”.' : 'Najnowsze u góry.'} Zielony kod = trafienie ${tgt}. Pomarańczowa linia = granica między wierszem „▶ NASTĘPNY = GRA” a wierszem zakładu. • = kod dopisany po bazie.</div></div>`;
+  return h;
+}
+function stepSpace() {   // ta sama przestrzeń co szukaj/search.py
+  const pats = []; for (const a of CFG.first) for (const b of '01x') for (const c of '01x') if (a + b + c !== 'xxx') pats.push(a + b + c);
+  const step = [], trig = [...pats];
+  const comb = (arr, r, st = 0, cur = []) => { if (cur.length === r) { step.push(['S', cur.join('∪')]); return; } for (let i = st; i < arr.length; i++) comb(arr, r, i + 1, [...cur, arr[i]]); };
+  for (let r = 1; r <= CFG.maxUnion; r++) comb(AL, r);
+  for (const p of pats) for (const q of pats) { step.push(['U', p + ' → ' + q]); trig.push(p + ' → ' + q); }
+  return { step, trig };
+}
+function renderUst() {
+  const f = getFound().length;
+  let h = `<div class="sec"><div class="sh"><b>Kryteria modelu</b><span class="m">sprawdzane po każdym kodzie</span></div><table class="rules">
+    <tr><th>cykle do</th><th>max BUST</th></tr>` +
+    R.rules.map((r, i) => `<tr><td>${r[0] === null ? `ponad ${topCyc()}` : `<input data-i="${i}" data-j="0" value="${r[0]}" inputmode="numeric">`}</td><td><input data-i="${i}" data-j="1" value="${r[1]}" inputmode="numeric"></td></tr>`).join('') +
+    `<tr><td>min. cykli</td><td><input id="minC" value="${R.minCyc}" inputmode="numeric"></td></tr>
+    <tr><td>min. BUST-ów</td><td><input id="minB" value="${R.minBust}" inputmode="numeric"></td></tr>
+    <tr><td>max BUST od razu po BUST-cie</td><td><input id="maxCl" value="${R.maxClose}" inputmode="numeric"></td></tr></table>
+    <div style="display:flex;gap:6px;margin-top:8px"><button class="btn pri" id="saveR">Zapisz</button><button class="btn" id="defR">Domyślne</button></div>
+    <div class="hint">Domyślnie: do 200 cykli max 5 BUST, do 300 max 9, do 400 max 11, ponad 400 max 11 (★), min. ${CFG.minCyc} cykli, min. ${CFG.minBust} BUST-y
+    (1–2 BUST-y mało mówią o powtórkach), BUST od razu po BUST-cie max ${CFG.maxClose}×. Mniej BUST-ów = rzadziej BUST; 0 powtórek = BUST nigdy nie przyszedł od razu po BUST-cie.</div></div>` + repHtml(true);
+  h += `<div class="sec"><div class="sh"><b>Szukaj nowych modeli</b><span class="m">na całym ciągu (${codes.length.toLocaleString('pl')} kodów)</span></div>
+    <div class="kv"><span>pula z chmury (baza do Nr ${POOLS[tgt].seedN})</span><b>${POOLS[tgt].pool.length.toLocaleString('pl')}</b><span>znalezione w appce</span><b>${f.toLocaleString('pl')}</b></div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+    <button class="btn pri" id="srch" ${searching ? 'disabled' : ''}>Szukaj 20 000 konfiguracji</button>
+    <button class="btn" id="clrF" ${searching || !f ? 'disabled' : ''}>Usuń znalezione</button></div>`;
+  if (searching) h += `<div class="bar"><i style="width:${(100 * searching.k / searching.n).toFixed(0)}%"></i></div><div class="hint">${searching.k.toLocaleString('pl')} / ${searching.n.toLocaleString('pl')} · nowych: ${searching.f}</div>`;
+  h += `<div class="hint">Losuje modele STEP (SERIA / UKŁAD) × TRIGGER × offset 1–7 i dodaje te, które spełniają kryteria wersji A.</div></div>`;
+  h += `<div class="sec"><div class="sh"><b>Import kodów</b><span class="m">teraz ${codes.length.toLocaleString('pl')} kodów</span></div>
+    <div class="hint" style="margin:0 0 8px">Plik eksportu z ${CFG.razem} albo z jej tabel (.json z listą <b>codes</b>, pełny ciąg od Nr 1) albo plik tekstowy z kodami.
+    Kody muszą zgadzać się z ciągiem w appce — dopisywane są tylko nowe. Trafiają też do ${CFG.razem} (wspólna pamięć).</div>
+    <button class="btn pri" id="impBtn">Wybierz plik i importuj</button>
+    <input type="file" id="impIn" accept=".json,.txt,application/json,text/plain" style="display:none">
+    ${lsGet(LSK.imp, '') ? `<div class="hint">Ostatni import: ${esc(lsGet(LSK.imp, ''))}</div>` : ''}</div>`;
+  h += `<div class="note">SZUKAJ BUST ${APP_VER} · ${CFG.razem}: klucz kodów <b>${CFG.seedKey}</b>. Większe przeszukanie (miliony modeli) robi skrypt <b>szukaj/search.py</b> w repo. Modele w MOJE / znalezione są osobne od SZUKAJ.</div>`;
+  return h;
+}
+function render() {
+  $('hdrN').textContent = `Nr ${codes.length.toLocaleString('pl')} · BET ${tgt}`;
+  const el = $('main');
+  el.innerHTML = view === 'gra' ? renderGra() : view === 'tab' ? renderTab() : view === 'moje' ? renderMoje() : renderUst();
+  const hm = $('hdrModel');   // opis modelu w nagłówku (TABELA / MOJE)
+  if (hm) { const m = (view === 'tab' || view === 'moje') && selK !== null && P[selK] && !(view === 'moje' && !getMy().length) ? P[selK] : null;
+    hm.innerHTML = m ? `<b>${mid(selK, m)}</b> · ${esc(ruleTxt(m))}<span class="mh">dotknij wiersz → łańcuch STEP/TRIGGER · przytrzymaj → statystyki</span>` : ''; }
+  try { document.documentElement.style.setProperty('--hdrH', document.querySelector('header').offsetHeight + 'px'); } catch (e) {}
+  const nm = $('navMine'); if (nm) nm.textContent = `MOJE · ${getMy().length}`;
+  if (view === 'moje') el.querySelectorAll('[data-mk]').forEach(bindCard);
+  if (view === 'tab' || view === 'moje') {
+    const pb2 = $('playBtn'); if (pb2) pb2.onclick = () => startMy(selK);
+    if (lab) {
+      applyHL(el);
+      const nr = $('nextRow'); if (nr) { nr.style.cursor = 'pointer'; nr.onclick = () => { hlBet = -1; liveOn = !liveOn; applyHL(el); }; }
+      el.querySelectorAll('tr[data-i], #nextRow').forEach(r => {   // przytrzymanie wiersza → STATYSTYKI modelu
+        let t = null, x0 = 0, y0 = 0; const cancel = () => { clearTimeout(t); t = null; };
+        r.addEventListener('pointerdown', e => { r._lp = false; x0 = e.clientX; y0 = e.clientY; cancel(); t = setTimeout(() => { r._lp = true; openStats(selK); }, 550); });
+        r.addEventListener('pointermove', e => { if (t && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) cancel(); });
+        ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => r.addEventListener(ev, cancel));
+        r.addEventListener('contextmenu', e => { e.preventDefault(); cancel(); r._lp = true; openStats(selK); });
+        r.addEventListener('click', e => { if (r._lp) { r._lp = false; e.stopImmediatePropagation(); } }, true);
+      });
+      el.querySelectorAll('tr[data-i]').forEach(r => r.onclick = () => {
+        // ponowne dotknięcie obramowanego wiersza zamyka podświetlenie
+        if (/\bhl-/.test(r.className)) { hlBet = -1; liveOn = false; applyHL(el); return; }
+        const i = +r.dataset.i, b = betOf(i);
+        if (lab && lab.K[i] >= 6 && lab.K[i] <= 8) askRowPop(i);
+        if (b >= 0 && b < codes.length) { hlBet = b; applyHL(el); return; }
+        const m = P[selK], o = lastEval && lastEval.out[selK];   // wiersz bieżącego łańcucha → pokaż stan TERAZ
+        if (o) { const L = liveChain(m, o); if ([].concat(L.step, L.stepPart, L.trig, L.trigPart, L.wait).includes(i)) { hlBet = -1; liveOn = true; applyHL(el); } }
+      });
+    }
+    el.querySelectorAll('[data-stop]').forEach(b => b.onclick = () => { if (confirm('Usunąć z MOJE GRY?')) stopMy(b.dataset.stop); });
+    el.querySelectorAll('[data-ord]').forEach(b => b.onclick = () => { tabAsc = b.dataset.ord === '1'; try { localStorage.setItem(CFG.app + '_szbust_v1_asc', tabAsc ? '1' : '0'); } catch (e) {} tabScroll = true; render(); });
+    if (lab && tabScroll) { tabScroll = false; if (tabAsc) setTimeout(() => scrollTo(0, document.documentElement.scrollHeight), 0); }
+    doFlash(el);
+    $('evChk') && ($('evChk').onchange = e => { tabEv = e.target.checked; render(); });
+    const mb = $('moreBtn'); if (mb) mb.onclick = () => { const h0 = document.documentElement.scrollHeight, y0 = scrollY; tabN += 150; render(); if (tabAsc) scrollTo(0, y0 + document.documentElement.scrollHeight - h0); };
+  }
+  if (view === 'gra') {
+    el.querySelectorAll('[data-only]').forEach(b => b.onclick = () => { afterOnly = !afterOnly; try { localStorage.setItem(CFG.app + '_szbust_v1_gra_only', afterOnly ? '1' : '0'); } catch (e) {} render(); });
+    el.querySelectorAll('[data-mine]').forEach(b => b.onclick = () => { onlyMine = !onlyMine; try { localStorage.setItem(CFG.app + '_szbust_v1_onlymine', onlyMine ? '1' : '0'); } catch (e) {} render(); scrollTo(0, 0); });
+    el.querySelectorAll('[data-b]').forEach(b => b.onclick = () => {
+      const i = +b.dataset.b; BANDS = BANDS.includes(i) ? BANDS.filter(x => x !== i) : [...BANDS, i]; lsSet(LSK.bands, JSON.stringify(BANDS)); render();
+    });
+    el.querySelectorAll('[data-stop]').forEach(b => b.onclick = e => { e.stopPropagation(); if (confirm('Usunąć z MOJE GRY?')) stopMy(b.dataset.stop); });
+    el.querySelectorAll('[data-more]').forEach(b => b.onclick = () => { const i = +b.dataset.more; bandCap[i] = (bandCap[i] || 15) + 30; render(); });
+    el.querySelectorAll('[data-mk]').forEach(bindCard);
+  }
+  if (view === 'ust') {
+    $('saveR').onclick = () => {
+      const rules = R.rules.map(r => [...r]);
+      el.querySelectorAll('.rules input[data-i]').forEach(i => { rules[+i.dataset.i][+i.dataset.j] = Math.max(0, parseInt(i.value, 10) || 0); });
+      rules.sort((a, b) => (a[0] === null) - (b[0] === null) || a[0] - b[0]);
+      R = Object.assign(defR(), { rules, minCyc: Math.max(1, parseInt($('minC').value, 10) || 1), minBust: Math.max(1, parseInt($('minB').value, 10) || 1), maxClose: Math.max(0, parseInt($('maxCl').value, 10) || 0) });
+      lsSet(LSK.rules, JSON.stringify(R)); toast('Zapisano kryteria'); recompute();
+    };
+    $('defR').onclick = () => { R = defR(); lsSet(LSK.rules, ''); recompute(); };
+    $('srch').onclick = () => {
+      const sp = stepSpace(), have = P.map(m => m.slice(0, 5).join('|'));
+      searching = { k: 0, n: 20000, f: 0 }; render();
+      W.postMessage({ type: 'search', n: 20000, step: sp.step, trig: sp.trig, R, have });
+    };
+    $('impBtn').onclick = () => $('impIn').click();
+    $('impIn').onchange = e => {
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => { try { importCodes(rd.result, f.name); } catch (err) { alert('Import przerwany, nic nie zmieniono:\n' + err.message); } };
+      rd.readAsText(f);
+    };
+    $('clrF').onclick = () => { if (confirm('Usunąć modele znalezione w appce?')) { lsSet(foundKey(), '[]'); recompute(); } };
+  }
+}
+hint(); renderTgt(); recompute();
+// świeżość: SW (strona zawsze z sieci) + sprawdzenie wersji na serwerze
+try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('szukaj-sw.js', { scope: './' }).catch(() => {}); } catch (e) {}
+let instEv = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instEv = e; $('instBtn').style.display = 'block'; });
+$('instBtn').onclick = async () => { if (!instEv) return; instEv.prompt(); try { await instEv.userChoice; } catch (e) {} instEv = null; $('instBtn').style.display = 'none'; };
+async function checkVersion() {
+  try {
+    const t = await (await fetch(location.pathname + '?nocache=' + Date.now(), { cache: 'no-store' })).text();
+    const m = /const APP_VER = '([^']+)'/.exec(t);
+    if (m && m[1] !== APP_VER && !$('updBan')) {
+      const d = document.createElement('div'); d.id = 'updBan'; d.className = 'upd';
+      d.textContent = `Jest nowa wersja ${m[1]} (masz ${APP_VER}) — stuknij, żeby odświeżyć`;
+      d.onclick = () => location.replace(location.pathname + '?v=' + m[1]);
+      $('main').prepend(d);
+    }
+  } catch (e) {}
+}
+checkVersion(); document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
+</script>
+</body>
+</html>

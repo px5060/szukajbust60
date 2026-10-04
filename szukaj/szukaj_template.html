@@ -307,7 +307,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.2.0';
+const APP_VER = '1.3.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -337,8 +337,8 @@ let onlyMine = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_
 let BANDS = (() => { try { const v = JSON.parse(lsGet(LSK.bands, '')); if (Array.isArray(v)) return v; } catch (e) {} return R.rules.map((_, i) => i); })();
 function foundKey() { return LSK.found + tgt; }
 function getFound() { try { const v = JSON.parse(lsGet(foundKey(), '[]')); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
-function pool() {   // pula z chmury (znaleziona na bazie do Nr seedN) + znalezione w appce (m[5] = Nr znalezienia) + MOJE GRY spoza puli
-  const base = POOLS[tgt].pool.map(m => [m[0], m[1], m[2], m[3], m[4], POOLS[tgt].seedN]).concat(getFound());
+function pool() {   // pula z chmury (znaleziona na bazie do Nr seedN; szukanie w telefonie wyłączone) — dawniej też znalezione w appce (m[5] = Nr znalezienia) + MOJE GRY spoza puli
+  const base = POOLS[tgt].pool.map(m => [m[0], m[1], m[2], m[3], m[4], POOLS[tgt].seedN]);   // tylko pula z chmury — ta sama na każdym urządzeniu
   const have = new Set(base.map(specKey));
   getMy().forEach(g => { if (!have.has(specKey(g.m))) { base.push([...g.m, g.start]); have.add(specKey(g.m)); } });
   return base;
@@ -969,20 +969,18 @@ function renderUst() {
     <div style="display:flex;gap:6px;margin-top:8px"><button class="btn pri" id="saveR">Zapisz</button><button class="btn" id="defR">Domyślne</button></div>
     <div class="hint">Domyślnie: do 200 cykli max 5 BUST, do 300 max 9, do 400 max 11, ponad 400 max 11 (★), min. ${CFG.minCyc} cykli, min. ${CFG.minBust} BUST-y
     (1–2 BUST-y mało mówią o powtórkach), BUST od razu po BUST-cie max ${CFG.maxClose}×. Mniej BUST-ów = rzadziej BUST; 0 powtórek = BUST nigdy nie przyszedł od razu po BUST-cie.</div></div>` + repHtml(true);
-  h += `<div class="sec"><div class="sh"><b>Szukaj nowych modeli</b><span class="m">na całym ciągu (${codes.length.toLocaleString('pl')} kodów)</span></div>
-    <div class="kv"><span>pula z chmury (baza do Nr ${POOLS[tgt].seedN})</span><b>${POOLS[tgt].pool.length.toLocaleString('pl')}</b><span>znalezione w appce</span><b>${f.toLocaleString('pl')}</b></div>
-    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-    <button class="btn pri" id="srch" ${searching ? 'disabled' : ''}>Szukaj 20 000 konfiguracji</button>
-    <button class="btn" id="clrF" ${searching || !f ? 'disabled' : ''}>Usuń znalezione</button></div>`;
-  if (searching) h += `<div class="bar"><i style="width:${(100 * searching.k / searching.n).toFixed(0)}%"></i></div><div class="hint">${searching.k.toLocaleString('pl')} / ${searching.n.toLocaleString('pl')} · nowych: ${searching.f}</div>`;
-  h += `<div class="hint">Losuje modele STEP (SERIA / UKŁAD) × TRIGGER × offset 1–7 i dodaje te, które spełniają kryteria wersji A.</div></div>`;
+  h += `<div class="sec"><div class="sh"><b>Pula modeli (z chmury)</b><span class="m">ta sama na każdym urządzeniu</span></div>
+    <div class="kv"><span>modele w puli</span><b>${POOLS[tgt].pool.length.toLocaleString('pl')}</b><span>pula policzona na kodach do Nr</span><b>${POOLS[tgt].seedN.toLocaleString('pl')}</b><span>kody w appce teraz</span><b>${codes.length.toLocaleString('pl')}</b></div>
+    <div class="hint">Szukanie modeli w telefonie jest wyłączone, żeby telefon, appka i PC pokazywały te same modele. Nowe kody i BUST-y liczą się od razu dla wszystkich modeli z puli.
+    Pulę aktualizuje Claude w repo: wyślij mu eksport kodów z ${CFG.razem} — przeliczy miliony modeli na nowym ciągu i wyda nową wersję appki.</div>` +
+    (f ? `<div class="hint" style="margin-top:6px">Na tym urządzeniu zostały modele znalezione kiedyś w appce (${f.toLocaleString('pl')}) — nie są już używane.</div><button class="btn" id="clrF" style="margin-top:6px">Usuń stare znalezione z tego urządzenia</button>` : '') + `</div>`;
   h += `<div class="sec"><div class="sh"><b>Import kodów</b><span class="m">teraz ${codes.length.toLocaleString('pl')} kodów</span></div>
     <div class="hint" style="margin:0 0 8px">Plik eksportu z ${CFG.razem} albo z jej tabel (.json z listą <b>codes</b>, pełny ciąg od Nr 1) albo plik tekstowy z kodami.
     Kody muszą zgadzać się z ciągiem w appce — dopisywane są tylko nowe. Trafiają też do ${CFG.razem} (wspólna pamięć).</div>
     <button class="btn pri" id="impBtn">Wybierz plik i importuj</button>
     <input type="file" id="impIn" accept=".json,.txt,application/json,text/plain" style="display:none">
     ${lsGet(LSK.imp, '') ? `<div class="hint">Ostatni import: ${esc(lsGet(LSK.imp, ''))}</div>` : ''}</div>`;
-  h += `<div class="note">SZUKAJ BUST ${APP_VER} · ${CFG.razem}: klucz kodów <b>${CFG.seedKey}</b>. Większe przeszukanie (miliony modeli) robi skrypt <b>szukaj/search.py</b> w repo. Modele w MOJE / znalezione są osobne od SZUKAJ.</div>`;
+  h += `<div class="note">SZUKAJ BUST ${APP_VER} · ${CFG.razem}: klucz kodów <b>${CFG.seedKey}</b>. Pulę (miliony przeszukanych modeli) liczy skrypt <b>szukaj/search.py</b> w repo. Modele w MOJE / znalezione są osobne od SZUKAJ.</div>`;
   return h;
 }
 function render() {
@@ -1047,11 +1045,6 @@ function render() {
       lsSet(LSK.rules, JSON.stringify(R)); toast('Zapisano kryteria'); recompute();
     };
     $('defR').onclick = () => { R = defR(); lsSet(LSK.rules, ''); recompute(); };
-    $('srch').onclick = () => {
-      const sp = stepSpace(), have = P.map(m => m.slice(0, 5).join('|'));
-      searching = { k: 0, n: 20000, f: 0 }; render();
-      W.postMessage({ type: 'search', n: 20000, step: sp.step, trig: sp.trig, R, have });
-    };
     $('impBtn').onclick = () => $('impIn').click();
     $('impIn').onchange = e => {
       const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -1059,7 +1052,7 @@ function render() {
       rd.onload = () => { try { importCodes(rd.result, f.name); } catch (err) { alert('Import przerwany, nic nie zmieniono:\n' + err.message); } };
       rd.readAsText(f);
     };
-    $('clrF').onclick = () => { if (confirm('Usunąć modele znalezione w appce?')) { lsSet(foundKey(), '[]'); recompute(); } };
+    if ($('clrF')) $('clrF').onclick = () => { if (confirm('Usunąć stare modele znalezione w appce z tego urządzenia?')) { lsSet(foundKey(), '[]'); recompute(); } };
   }
 }
 hint(); renderTgt(); recompute();

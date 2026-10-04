@@ -307,7 +307,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.1.0';
+const APP_VER = '1.2.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -610,7 +610,7 @@ function playLists() {   // modele w kryteriach, które są w cyklu zaraz po BUS
   const out = lastEval.out, B = R.rules.map(() => []), pre = [];
   const mine = new Set(getMy().map(myIndex).filter(k => k >= 0));
   out.forEach((r, k) => {
-    if (!qual(r) || !afterB(r) || !KS.includes(r.bs + 1) || mine.has(k)) return;
+    if (!qual(r) || !afterB(r) || r.ph !== 2 || !KS.includes(r.bs + 1) || mine.has(k)) return;   // tylko po TRIGGERZE: GRA na następnym / zakład ustawiony
     B[bandOf(r)].push(k);
   });
   const po = { gra: 0, czeka: 1, trig: 2, wait: 3 };
@@ -659,7 +659,7 @@ function renderGra() {
   if (!lastEval) return `<div class="ban idle">Liczę ${P.length.toLocaleString('pl')} modeli…</div>`;
   const out = lastEval.out, { B } = playLists();
   let qn = 0, an = 0; const perK = {}; KSTEPS.forEach(k => perK[k] = 0);
-  out.forEach((r, k) => { if (qual(r)) { qn++; if (afterB(r)) { an++; if (perK[r.bs + 1] !== undefined && !isMine(k) && BANDS.includes(bandOf(r))) perK[r.bs + 1]++; } } });
+  out.forEach((r, k) => { if (qual(r)) { qn++; if (afterB(r)) { an++; if (r.ph === 2 && perK[r.bs + 1] !== undefined && !isMine(k) && BANDS.includes(bandOf(r))) perK[r.bs + 1]++; } } });
   const my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0);
   const myOn = my.filter(x => !myResult(x.g, out[x.k]));
   const graAll = (onlyMine ? [] : [].concat(...B.filter((_, i) => BANDS.includes(i))).filter(k => phaseOf(out[k]) === 'gra'))
@@ -677,16 +677,16 @@ function renderGra() {
   if (onlyMine) h += `<div class="note"><b>MOJE MODELE</b> — tylko modele, które grasz (${myOn.length} w grze${my.length > myOn.length ? `, ${my.length - myOn.length} zakończone` : ''}). Dotknij „▶ MOJE MODELE” jeszcze raz, żeby wrócić do wszystkich.</div>` +
     (my.length ? '' : `<div class="empty" style="padding:10px 4px">Nie grasz jeszcze żadnego modelu. Przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`);
   else h += `<div class="note">W kryteriach: <b>${qn.toLocaleString('pl')}</b> z ${P.length.toLocaleString('pl')} modeli (min ${R.minCyc} cykli, min ${R.minBust} BUST, BUST od razu po BUST-cie max ${R.maxClose}×).
-    <b>Tuż po BUST-cie: ${an}</b> — ich ostatni cykl skończył się BUST-em, a teraz trwa następny cykl. Niżej tylko modele na wybranych krokach (${KS.length ? KS.map(k => 'k' + k).join(', ') : 'żaden'}) — wchodzisz od tego kroku do WIN albo kroku 8. W grupach wg liczby cykli, najbliższa gra pierwsza. Dotknij karty → TABELA.</div>`;
+    <b>Tuż po BUST-cie: ${an}</b> — ich ostatni cykl skończył się BUST-em, a teraz trwa następny cykl. Niżej <b>tylko modele po TRIGGERZE</b> — GRA na następnym wierszu albo zakład już ustawiony za kilka wierszy — na wybranych krokach (${KS.length ? KS.map(k => 'k' + k).join(', ') : 'żaden'}); wchodzisz od tego kroku do WIN albo kroku 8. W grupach wg liczby cykli, najbliższa gra pierwsza. Dotknij karty → TABELA.</div>`;
   if (my.length) h += myCardsHtml(out, my, myOn);
   for (const i of bandOrder()) {
     if (onlyMine) break;
     if (!BANDS.includes(i) || !shown(i)) continue;
     const L = B[i].filter(k => !afterOnly || phaseOf(out[k]) === 'gra'), cap = bandCap[i] || 15, isStar = R.rules[i][0] === null;
     const cnt = { gra: 0, czeka: 0, trig: 0, wait: 0 }; B[i].forEach(k => cnt[phaseOf(out[k])]++);
-    let s = `<div class="sec${isStar ? ' star' : ''}"><div class="sh"><b>${bandName(i)}</b><span class="m">${B[i].length} po BUST-cie</span></div>
-      <div class="hint" style="margin:-2px 2px 6px">GRA na następnym ${cnt.gra} · zakład ustawiony ${cnt.czeka} · STEP otwarty ${cnt.trig} · czekam na STEP ${cnt.wait}</div>`;
-    if (!L.length) s += `<div class="empty">${afterOnly ? 'żaden model z tej grupy nie gra na następnym wierszu' : 'teraz żaden model z tej grupy nie jest tuż po BUST-cie na wybranych krokach'}</div>`;
+    let s = `<div class="sec${isStar ? ' star' : ''}"><div class="sh"><b>${bandName(i)}</b><span class="m">${B[i].length} po TRIGGERZE</span></div>
+      <div class="hint" style="margin:-2px 2px 6px">GRA na następnym ${cnt.gra} · zakład za kilka wierszy ${cnt.czeka}</div>`;
+    if (!L.length) s += `<div class="empty">${afterOnly ? 'żaden model z tej grupy nie gra na następnym wierszu' : 'teraz żaden model z tej grupy (po BUST-cie) nie ma TRIGGERA na wybranych krokach'}</div>`;
     L.slice(0, cap).forEach(k => s += card(k, P[k], out[k], phaseOf(out[k])));
     if (L.length > cap) s += `<button class="btn more" data-more="${i}">Pokaż więcej z tej grupy (${L.length - cap})</button>`;
     h += s + '</div>';

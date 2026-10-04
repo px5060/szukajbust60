@@ -958,9 +958,31 @@ function stepSpace() {   // ta sama przestrzeń co szukaj/search.py
   for (const p of pats) for (const q of pats) { step.push(['U', p + ' → ' + q]); trig.push(p + ' → ' + q); }
   return { step, trig };
 }
+// ---- szukanie modelu po nazwie (P123): ta sama pula z chmury = te same nazwy na każdym urządzeniu ----
+let findQ = '';
+function findModel(q) { const m = /^\s*[pP]?\s*(\d+)\s*$/.exec(q || ''); if (!m) return -1; const k = +m[1] - 1; return k >= 0 && k < POOLS[tgt].pool.length ? k : -2; }
+function findHtml() {
+  const n = POOLS[tgt].pool.length;
+  let h = `<div class="sec"><div class="sh"><b>Znajdź model po nazwie</b><span class="m">BET ${tgt} · P1–P${n}</span></div>
+    <div class="selrow"><input id="findIn" placeholder="np. P123" value="${esc(findQ)}" autocomplete="off" autocapitalize="characters"><button class="btn pri" id="findBtn">Znajdź</button></div>`;
+  if (findQ) {
+    const k = findModel(findQ);
+    if (k === -1) h += `<div class="hint">Wpisz nazwę modelu, np. P123 (albo samą liczbę 123).</div>`;
+    else if (k === -2) h += `<div class="hint">Nie ma modelu ${esc(findQ.toUpperCase())} w puli BET ${tgt} — nazwy są od P1 do P${n}.</div>`;
+    else if (!lastEval || busy) h += `<div class="hint">Liczę…</div>`;
+    else {
+      const r = lastEval.out[k], mine = isMine(k);
+      h += `<div style="margin-top:8px">${card(k, P[k], r, phaseOf(r))}</div><div style="display:flex;gap:6px;flex-wrap:wrap">` +
+        `<button class="btn" id="findTab">Otwórz TABELĘ</button>` +
+        (mine ? `<button class="btn" disabled>▶ już jest w MOJE GRY</button>` : `<button class="btn pri" id="findPlay">▶ Gram ten model — do MOJE GRY (krok ${r.bs + 1}, ${ST[r.bs]} zł)</button>`) + `</div>` +
+        (qual(r) ? '' : `<div class="hint">Uwaga: ten model teraz nie spełnia kryteriów (na GRA go nie widać), ale możesz go grać.</div>`);
+    }
+  }
+  return h + `<div class="hint">Nazwy modeli (P…) są takie same na każdym urządzeniu z tą samą wersją appki (${APP_VER}). Wpisz nazwę modelu, który grasz na innym urządzeniu, i dodaj go tu do MOJE GRY.</div></div>`;
+}
 function renderUst() {
   const f = getFound().length;
-  let h = `<div class="sec"><div class="sh"><b>Kryteria modelu</b><span class="m">sprawdzane po każdym kodzie</span></div><table class="rules">
+  let h = findHtml() + `<div class="sec"><div class="sh"><b>Kryteria modelu</b><span class="m">sprawdzane po każdym kodzie</span></div><table class="rules">
     <tr><th>cykle do</th><th>max BUST</th></tr>` +
     R.rules.map((r, i) => `<tr><td>${r[0] === null ? `ponad ${topCyc()}` : `<input data-i="${i}" data-j="0" value="${r[0]}" inputmode="numeric">`}</td><td><input data-i="${i}" data-j="1" value="${r[1]}" inputmode="numeric"></td></tr>`).join('') +
     `<tr><td>min. cykli</td><td><input id="minC" value="${R.minCyc}" inputmode="numeric"></td></tr>
@@ -1037,6 +1059,11 @@ function render() {
     el.querySelectorAll('[data-mk]').forEach(bindCard);
   }
   if (view === 'ust') {
+    const fi = $('findIn'), go = () => { findQ = fi.value.trim(); render(); };
+    $('findBtn').onclick = go; fi.onkeydown = e => { if (e.key === 'Enter') go(); };
+    const ft = $('findTab'); if (ft) ft.onclick = () => openTab(findModel(findQ));
+    const fp = $('findPlay'); if (fp) fp.onclick = () => startMy(findModel(findQ));
+    el.querySelectorAll('[data-mk]').forEach(bindCard);
     $('saveR').onclick = () => {
       const rules = R.rules.map(r => [...r]);
       el.querySelectorAll('.rules input[data-i]').forEach(i => { rules[+i.dataset.i][+i.dataset.j] = Math.max(0, parseInt(i.value, 10) || 0); });

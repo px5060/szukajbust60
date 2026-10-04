@@ -21,6 +21,7 @@ Szuka modeli STEP → TRIGGER → zakład z dużą liczbą cykli i małą liczb�
 - **TABELA**: etykiety modelu na ciągu kodów. Przy BUST-cie widać, ile cykli minęło od poprzedniego BUST-u; „BUST OD RAZU PO BUST-CIE” jest wyróżniony.
   W kolumnie GRA zaznaczone są zakłady w cyklach po BUST-cie.
 - **MOJE**: „Gram ten model” śledzi grę do WIN albo kroku 8 (osobne od MOJE w SZUKAJ).
+- **Tylko pula z chmury**: szukania w telefonie nie ma, więc telefon, appka i PC pokazują te same modele. Pulę aktualizuje `szukaj/search.py` na nowym ciągu, potem nowa wersja appki.
 - **Kody** wspólne z T60 RAZEM (ta sama domena, klucz `t60razem_v1_added`). Import pliku eksportu z RAZEM: zakładka SZUKAJ → Import kodów.
 
 ### Wynik testu (baza z repo)

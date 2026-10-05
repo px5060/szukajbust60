@@ -331,7 +331,7 @@ const defR = () => ({ rules: CFG.defRules, minCyc: CFG.minCyc, minBust: CFG.minB
 let R = (() => { try { const r = JSON.parse(lsGet(LSK.rules, '')); if (r && r.rules) {
   if (!r.rules.some(x => x[0] === null)) r.rules.push(CFG.defRules.find(x => x[0] === null) || [null, 11]);
   return Object.assign(defR(), r, { gap: CFG.gap, split: CFG.split }); } } catch (e) {} return defR(); })();
-const KSTEPS = [2, 3, 4, 5, 6, 7];   // kroki do wyboru na GRA (jak k5–k7 w SZUKAJ)
+const KSTEPS = [1, 2, 3, 4, 5, 6, 7];   // kroki do wyboru na GRA (k1 = pierwszy zakład cyklu po BUST-cie; domyślnie k5–k7 jak w SZUKAJ)
 let KS = (() => { try { const v = JSON.parse(lsGet(LSK.ks, '')); if (Array.isArray(v)) return v.filter(k => KSTEPS.includes(k)); } catch (e) {} return [5, 6, 7]; })();
 let afterOnly = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_gra_only') === '1'; } catch (e) { return false; } })();   // GRA: tylko GRA na następnym
 let view = 'gra', busy = false, searching = null, bandCap = {};

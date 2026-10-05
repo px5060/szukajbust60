@@ -11,7 +11,7 @@ Szuka modeli STEP → TRIGGER → zakład z dużą liczbą cykli i małą liczb�
 (cykl zaraz po BUST-cie kończył się WIN).
 
 - **GRA** pokazuje modele w kryteriach, które są **tuż po BUST-cie**: ich ostatni cykl skończył się BUST-em, teraz trwa następny cykl
-  Lista kroków **k2–k7** (domyślnie k5–k7, jak w SZUKAJ): widać tylko modele po BUST-cie, które są już po TRIGGERZE (GRA na następnym albo zakład ustawiony za kilka wierszy), na wybranych krokach, wchodzisz od tego kroku do WIN albo kroku 8. Na karcie: kiedy był BUST, krok, stan (GRA / zakład ustawiony / STEP / czekam),
+  Lista kroków **k1–k7** (domyślnie k5–k7, jak w SZUKAJ): widać tylko modele po BUST-cie, które są już po TRIGGERZE (GRA na następnym albo zakład ustawiony za kilka wierszy), na wybranych krokach, wchodzisz od tego kroku do WIN albo kroku 8. Na karcie: kiedy był BUST, krok, stan (GRA / zakład ustawiony / STEP / czekam),
   historia (cykle, BUST-y, co ile cykli BUST, ile razy BUST od razu po BUST-cie, ile razy WIN po BUST-cie) i **Sprawdzenie**.
 - **Sprawdzenie** = ostatnie 35% kodów: cykle, BUST-y i ile razy w tym okresie BUST przyszedł od razu po BUST-cie.
   Zakładka SZUKAJ ma tabelę zbiorczą „Czy brak powtórek się utrzymuje?” i uczciwy test z chmury

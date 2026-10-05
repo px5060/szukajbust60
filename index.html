@@ -892,7 +892,7 @@ function statsHtml(r) {
     ${row('ostatni BUST', `${lb}`)}
     ${row('BUST od razu po BUST-cie (powtórka)', `${two}`)}
     ${row('cykl po BUST-cie skończył się WIN', `<b class="ok">${r ? r.pw : ''}</b>`)}
-    ${row('po BUST-cie WIN na kroku (po kolei)', S.afterSeq.length || S.sinceB === 0 ? `<b>${S.afterSeq.map(v => v === 'BUST' ? '<span class="bad">BUST</span>' : v).join(', ') || '—'}</b>${S.sinceB === 0 && r ? `<span class="n">teraz cykl po BUST-cie: k${r.bs + 1}</span>` : ''}` : '<b>—</b>')}
+    ${row('po BUST-cie WIN na kroku (po kolei)', `<b>${S.afterSeq.map(v => v === 'BUST' ? '<span class="bad">BUST</span>' : v).join(', ') || '—'}</b>`)}
     ${row('BUST średnio co', `<b>${S.b ? Math.round(S.cyc / S.b) + ' cykli' : '—'}</b>`)}
     ${row('najdłuższa seria BUST pod rząd', `<b>${S.maxRun}</b>`)}
     ${row('najbliższe 2 BUST-y', `<b>${S.minGap === null ? '—' : 'co ' + S.minGap + (S.minGap === 1 ? ' cykl (pod rząd)' : S.minGap <= 4 ? ' cykle' : ' cykli')}</b>`)}

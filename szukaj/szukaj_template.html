@@ -309,7 +309,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.3.0';
+const APP_VER = '1.3.1';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -873,7 +873,8 @@ function modelStats() {   // z etykiet wybranego modelu (całe dzieje)
   let run = 0, maxRun = 0, twoRow = []; ends.forEach(e => { if (e[0] === 2) { run++; maxRun = Math.max(maxRun, run); if (run >= 2) twoRow.push(e[1]); } else run = 0; });
   let minGap = null; for (let j = 1; j < bi.length; j++) { const g = bi[j] - bi[j - 1]; if (minGap === null || g < minGap) minGap = g; }
   const lastB = bi.length ? bi[bi.length - 1] : -1;
-  return { bets, cyc, w: cyc - bi.length, b: bi.length, wk, maxRun, twoRow, minGap,
+  const afterSeq = bi.filter(j => j + 1 < cyc).map(j => ends[j + 1][0] === 1 ? String(ends[j + 1][2]) : 'BUST');   // krok WIN w cyklu zaraz po każdym BUST-cie
+  return { bets, cyc, w: cyc - bi.length, b: bi.length, wk, maxRun, twoRow, minGap, afterSeq,
     lastBRow: lastB >= 0 ? ends[lastB][1] : null, sinceB: lastB >= 0 ? cyc - 1 - lastB : null,
     k5: ends.filter(e => e[2] >= 5).length, k5w: ends.filter(e => e[0] === 1 && e[2] >= 5).length, last: ends.slice(-16) };
 }
@@ -891,6 +892,7 @@ function statsHtml(r) {
     ${row('ostatni BUST', `${lb}`)}
     ${row('BUST od razu po BUST-cie (powtórka)', `${two}`)}
     ${row('cykl po BUST-cie skończył się WIN', `<b class="ok">${r ? r.pw : ''}</b>`)}
+    ${row('po BUST-cie WIN na kroku (po kolei)', S.afterSeq.length || S.sinceB === 0 ? `<b>${S.afterSeq.map(v => v === 'BUST' ? '<span class="bad">BUST</span>' : v).join(', ') || '—'}</b>${S.sinceB === 0 && r ? `<span class="n">teraz cykl po BUST-cie: k${r.bs + 1}</span>` : ''}` : '<b>—</b>')}
     ${row('BUST średnio co', `<b>${S.b ? Math.round(S.cyc / S.b) + ' cykli' : '—'}</b>`)}
     ${row('najdłuższa seria BUST pod rząd', `<b>${S.maxRun}</b>`)}
     ${row('najbliższe 2 BUST-y', `<b>${S.minGap === null ? '—' : 'co ' + S.minGap + (S.minGap === 1 ? ' cykl (pod rząd)' : S.minGap <= 4 ? ' cykle' : ' cykli')}</b>`)}

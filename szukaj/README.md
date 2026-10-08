@@ -8,7 +8,7 @@ Appka = `../index.html` (repo osobne od RAZEM i SZUKAJ, własny adres). Szablon 
 - **Powtórka** = BUST, po którym następny cykl też skończył się BUST-em (odstęp 1 cykl; `GAP = 2` w search.py,
   `gap` w konfiguracji strony — przygotowane na późniejsze rozszerzenie o kolejne cykle).
 - **Nauka / sprawdzenie**: cykle zakończone na pierwszych 65% kodów / na ostatnich 35% (`SPLIT = 0.65`).
-- **Kryteria** (domyślne): progi cykle/BUST jak w SZUKAJ, min. 150 cykli, min. 3 BUST-y, max 0 powtórek.
+- **Kryteria** (domyślne): progi cykle/BUST jak w SZUKAJ, min. 100 cykli (przedziały 100–200 · 201–300 · 301–400 · 401+, w każdym „od X” i „max Y” BUST), min. 3 BUST-y, max 0 powtórek.
 - **GRA**: modele w kryteriach tuż po BUST-cie (ostatni zakończony cykl = BUST).
 
 ## Pula z chmury

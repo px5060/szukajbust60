@@ -18,7 +18,7 @@ def seed_codes():
 
 
 RULES = [(200, 5), (300, 9), (400, 11), (None, 11)]   # None = ponad ostatni próg (bez górnej granicy)
-MIN_CYC = 150       # domyślne min. cykli w appce
+MIN_CYC = 100       # domyślne min. cykli w appce (przedziały 100–200 · 201–300 · 301–400 · 401+, jak w SZUKAJ)
 MIN_BUST = 3        # domyślne min. BUST-ów (1–2 BUST-y mało mówią o powtórkach)
 GAP = 2             # powtórka = następny BUST po mniej niż GAP cyklach; 2 = BUST zaraz po BUST-cie (cykl po cyklu)
 MAX_CLOSE = 0       # domyślnie 0 powtórek w historii (BUST nigdy od razu po BUST-cie)

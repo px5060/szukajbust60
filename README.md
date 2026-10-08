@@ -16,7 +16,7 @@ Szuka modeli STEP → TRIGGER → zakład z dużą liczbą cykli i małą liczb�
 - **Sprawdzenie** = ostatnie 35% kodów: cykle, BUST-y i ile razy w tym okresie BUST przyszedł od razu po BUST-cie.
   Zakładka SZUKAJ ma tabelę zbiorczą „Czy brak powtórek się utrzymuje?” i uczciwy test z chmury
   (modele wybrane tylko na pierwszych 65% kodów, wynik na ostatnich 35%).
-- **Kryteria** (zakładka SZUKAJ, do zmiany): do 200 cykli max 5 BUST, do 300 max 9, do 400 max 11, ponad 400 max 11, min. 150 cykli,
+- **Kryteria** (zakładka SZUKAJ, do zmiany): do 200 cykli max 5 BUST, do 300 max 9, do 400 max 11, ponad 400 max 11, min. 100 cykli (przedziały 100–200 · 201–300 · 301–400 · 401+, w każdym „od X” i „max Y” BUST),
   min. 3 BUST-y (1–2 BUST-y mało mówią o powtórkach), max 0 BUST-ów od razu po BUST-cie.
 - **TABELA**: etykiety modelu na ciągu kodów. Przy BUST-cie widać, ile cykli minęło od poprzedniego BUST-u; „BUST OD RAZU PO BUST-CIE” jest wyróżniony.
   W kolumnie GRA zaznaczone są zakłady w cyklach po BUST-cie.

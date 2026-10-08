@@ -195,7 +195,8 @@ function hit(P, i) {
 }
 function limitFor(cyc, rules) { for (const [mc, mb] of rules) if (mc === null || cyc <= mc) return mb; return null; }
 // wersja A: cykle i BUST-y w progach, min. BUST-ów, max powtórek (BUST od razu po BUST-cie)
-function qual(cyc, bu, cl, R) { if (cyc < R.minCyc || bu < R.minBust || cl > R.maxClose) return false; const l = limitFor(cyc, R.rules); return l !== null && bu <= l; }
+function minFor(cyc, rules) { for (const r of rules) if (r[0] === null || cyc <= r[0]) return r[2] || 0; return 0; }   // „od X BUST” w przedziale cykli
+function qual(cyc, bu, cl, R) { if (cyc < R.minCyc || bu < R.minBust || cl > R.maxClose) return false; const l = limitFor(cyc, R.rules); return l !== null && bu <= l && bu >= minFor(cyc, R.rules); }
 // m = [typ, STEP, x, TRIGGER, off]
 // powtórka = BUST, po którym następny BUST przyszedł po mniej niż R.gap cyklach (gap 2 = od razu w następnym cyklu)
 // nauka = cykle zakończone przed wierszem split (65% kodów), sprawdzenie = reszta (ostatnie 35%)
@@ -309,7 +310,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.4.0';
+const APP_VER = '1.5.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -330,6 +331,7 @@ let tgt = lsGet(LSK.tgt, CFG.targets[0]); if (!CFG.targets.includes(tgt)) tgt = 
 const defR = () => ({ rules: CFG.defRules, minCyc: CFG.minCyc, minBust: CFG.minBust, maxClose: CFG.maxClose, gap: CFG.gap, split: CFG.split });
 let R = (() => { try { const r = JSON.parse(lsGet(LSK.rules, '')); if (r && r.rules) {
   if (!r.rules.some(x => x[0] === null)) r.rules.push(CFG.defRules.find(x => x[0] === null) || [null, 11]);
+  if (r.minCyc === 150 && lsGet(LSK.rules + '_m100', '') !== '1') { r.minCyc = 100; lsSet(LSK.rules + '_m100', '1'); lsSet(LSK.rules, JSON.stringify(r)); }   // 1.5: przedział 100–200 jak w SZUKAJ (dawne domyślne 150)
   return Object.assign(defR(), r, { gap: CFG.gap, split: CFG.split }); } } catch (e) {} return defR(); })();
 const KSTEPS = [1, 2, 3, 4, 5, 6, 7];   // kroki do wyboru na GRA (k1 = pierwszy zakład cyklu po BUST-cie; domyślnie k5–k7 jak w SZUKAJ)
 let KS = (() => { try { const v = JSON.parse(lsGet(LSK.ks, '')); if (Array.isArray(v)) return v.filter(k => KSTEPS.includes(k)); } catch (e) {} return [5, 6, 7]; })();
@@ -592,7 +594,8 @@ const ST = [8, 8, 16, 32, 64, 128, 256, 512];
 function limitFor(cyc) { for (const [mc, mb] of R.rules) if (mc === null || cyc <= mc) return mb; return null; }
 function topCyc() { return Math.max(0, ...R.rules.filter(r => r[0] !== null).map(r => r[0])); }   // ponad ten próg = najwyższa półka
 const isTop = r => R.rules.some(x => x[0] === null) && r.nw + r.nbu > topCyc();
-function qual(r) { const cyc = r.nw + r.nbu; if (cyc < R.minCyc || r.nbu < R.minBust || r.cl > R.maxClose) return false; const l = limitFor(cyc); return l !== null && r.nbu <= l; }
+function minFor(cyc) { for (const r of R.rules) if (r[0] === null || cyc <= r[0]) return r[2] || 0; return 0; }   // „od X BUST” w przedziale cykli
+function qual(r) { const cyc = r.nw + r.nbu; if (cyc < R.minCyc || r.nbu < R.minBust || r.cl > R.maxClose) return false; const l = limitFor(cyc); return l !== null && r.nbu <= l && r.nbu >= minFor(cyc); }
 const afterB = r => r.sinceB === 0;   // ostatni zakończony cykl = BUST → trwa cykl zaraz po BUST-cie
 const showGra = r => qual(r) && afterB(r) && KS.includes(r.bs + 1) && BANDS.includes(bandOf(r));
 function rankKey(r) { const c = r.nw + r.nbu; return (isTop(r) ? 0 : 1) + r.pb + r.nbu / c - c * 1e-6; }
@@ -600,8 +603,8 @@ function rankKey(r) { const c = r.nw + r.nbu; return (isTop(r) ? 0 : 1) + r.pb +
 // grupy wg cykli = wiersze reguł (do 200 / do 300 / do 400 / ponad 400); kolejność na ekranie: od najdłuższych
 function bandOf(r) { const c = r.nw + r.nbu; for (let i = 0; i < R.rules.length; i++) if (R.rules[i][0] === null || c <= R.rules[i][0]) return i; return -1; }
 function bandName(i) {
-  const [mc, mb] = R.rules[i], lo = i ? R.rules[i - 1][0] + 1 : R.minCyc;
-  return mc === null ? `★ ponad ${R.rules[i - 1][0]} cykli · max ${mb} BUST` : `${lo}–${mc} cykli · max ${mb} BUST`;
+  const [mc, mb, mn] = R.rules[i], lo = i ? R.rules[i - 1][0] + 1 : R.minCyc, bt = mn > 0 ? `${mn}–${mb} BUST` : `max ${mb} BUST`;
+  return mc === null ? `★ ponad ${R.rules[i - 1][0]} cykli · ${bt}` : `${lo}–${mc} cykli · ${bt}`;
 }
 function bandShort(i) { const mc = R.rules[i][0], lo = i ? R.rules[i - 1][0] + 1 : R.minCyc; return mc === null ? `★ ${lo}+` : `${lo}–${mc}`; }   // przedziały rozłączne: 100–200, 201–300, 301–400, ★ 401+
 const PHASE_ORD = { gra: 0, czeka: 1, trig: 2, wait: 3 };
@@ -676,7 +679,7 @@ function renderGra() {
     `<button class="chip mine ${onlyMine ? 'on' : ''}" data-mine="1">▶ MOJE MODELE · ${my.length}</button></div>`;
   const shown = i => R.rules[i][0] !== null || B[i].length > 0;
   if (!onlyMine) { const allB = R.rules.length === BANDS.length && R.rules.every((_, i) => BANDS.includes(i)), one = !allB && BANDS.length === 1 ? BANDS[0] : -1;
-    h += `<div class="flt"><span>cykle:</span><button class="chip ${allB ? 'on' : ''}" data-b="all">wszystkie · ${B.reduce((n, l) => n + l.length, 0)}</button>${R.rules.map((_, i) => `<button class="chip ${i === one ? 'on' : ''}" data-b="${i}">${bandShort(i)} · ${B[i].length}</button>`).join('')}</div>`; }
+    h += `<div class="flt"><span>cykle:</span>${R.rules.map((_, i) => `<button class="chip ${i === one ? 'on' : ''}" data-b="${i}">${bandShort(i)} · ${B[i].length}</button>`).join('')}</div>`; }
   if (onlyMine) h += `<div class="note"><b>MOJE MODELE</b> — tylko modele, które grasz (${myOn.length} w grze${my.length > myOn.length ? `, ${my.length - myOn.length} zakończone` : ''}). Dotknij „▶ MOJE MODELE” jeszcze raz, żeby wrócić do wszystkich.</div>` +
     (my.length ? '' : `<div class="empty" style="padding:10px 4px">Nie grasz jeszcze żadnego modelu. Przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`);
   else h += `<div class="note">W kryteriach: <b>${qn.toLocaleString('pl')}</b> z ${P.length.toLocaleString('pl')} modeli (min ${R.minCyc} cykli, min ${R.minBust} BUST, BUST od razu po BUST-cie max ${R.maxClose}×).
@@ -987,13 +990,14 @@ function findHtml() {
 function renderUst() {
   const f = getFound().length;
   let h = findHtml() + `<div class="sec"><div class="sh"><b>Kryteria modelu</b><span class="m">sprawdzane po każdym kodzie</span></div><table class="rules">
-    <tr><th>cykle do</th><th>max BUST</th></tr>` +
-    R.rules.map((r, i) => `<tr><td>${r[0] === null ? `ponad ${topCyc()}` : `<input data-i="${i}" data-j="0" value="${r[0]}" inputmode="numeric">`}</td><td><input data-i="${i}" data-j="1" value="${r[1]}" inputmode="numeric"></td></tr>`).join('') +
-    `<tr><td>min. cykli</td><td><input id="minC" value="${R.minCyc}" inputmode="numeric"></td></tr>
-    <tr><td>min. BUST-ów</td><td><input id="minB" value="${R.minBust}" inputmode="numeric"></td></tr>
-    <tr><td>max BUST od razu po BUST-cie</td><td><input id="maxCl" value="${R.maxClose}" inputmode="numeric"></td></tr></table>
+    <tr><th>cykle do</th><th>od BUST</th><th>max BUST</th></tr>` +
+    R.rules.map((r, i) => `<tr><td>${r[0] === null ? `ponad ${topCyc()}` : `<input data-i="${i}" data-j="0" value="${r[0]}" inputmode="numeric">`}</td><td><input data-i="${i}" data-j="2" value="${r[2] || 0}" inputmode="numeric"></td><td><input data-i="${i}" data-j="1" value="${r[1]}" inputmode="numeric"></td></tr>`).join('') +
+    `<tr><td>min. cykli</td><td></td><td><input id="minC" value="${R.minCyc}" inputmode="numeric"></td></tr>
+    <tr><td>min. BUST-ów (wszędzie)</td><td></td><td><input id="minB" value="${R.minBust}" inputmode="numeric"></td></tr>
+    <tr><td>max BUST od razu po BUST-cie</td><td></td><td><input id="maxCl" value="${R.maxClose}" inputmode="numeric"></td></tr></table>
     <div style="display:flex;gap:6px;margin-top:8px"><button class="btn pri" id="saveR">Zapisz</button><button class="btn" id="defR">Domyślne</button></div>
-    <div class="hint">Domyślnie: do 200 cykli max 5 BUST, do 300 max 9, do 400 max 11, ponad 400 max 11 (★), min. ${CFG.minCyc} cykli, min. ${CFG.minBust} BUST-y
+    <div class="hint"><b>od BUST</b> = najmniej BUST-ów w tym przedziale cykli (0 = bez dolnej granicy), np. 201–300 cykli: od 6 do 9 BUST + „max BUST od razu po BUST-cie” 0–1 → modele z wieloma BUST-ami, ale bez podwójnych.<br>
+    Domyślnie: do 200 cykli max 5 BUST, do 300 max 9, do 400 max 11, ponad 400 max 11 (★), min. ${CFG.minCyc} cykli, min. ${CFG.minBust} BUST-y
     (1–2 BUST-y mało mówią o powtórkach), BUST od razu po BUST-cie max ${CFG.maxClose}×. Mniej BUST-ów = rzadziej BUST; 0 powtórek = BUST nigdy nie przyszedł od razu po BUST-cie.</div></div>` + repHtml(true);
   h += `<div class="sec"><div class="sh"><b>Pula modeli (z chmury)</b><span class="m">ta sama na każdym urządzeniu</span></div>
     <div class="kv"><span>modele w puli</span><b>${POOLS[tgt].pool.length.toLocaleString('pl')}</b><span>pula policzona na kodach do Nr</span><b>${POOLS[tgt].seedN.toLocaleString('pl')}</b><span>kody w appce teraz</span><b>${codes.length.toLocaleString('pl')}</b></div>
@@ -1061,8 +1065,8 @@ function render() {
     el.querySelectorAll('[data-only]').forEach(b => b.onclick = () => { afterOnly = !afterOnly; try { localStorage.setItem(CFG.app + '_szbust_v1_gra_only', afterOnly ? '1' : '0'); } catch (e) {} render(); });
     el.querySelectorAll('[data-mine]').forEach(b => b.onclick = () => { onlyMine = !onlyMine; try { localStorage.setItem(CFG.app + '_szbust_v1_onlymine', onlyMine ? '1' : '0'); } catch (e) {} render(); scrollTo(0, 0); });
     el.querySelectorAll('[data-b]').forEach(b => b.onclick = () => {
-      const all = R.rules.map((_, j) => j), v = b.dataset.b, i = +v;   // jeden przedział cykli naraz; ponowne dotknięcie albo „wszystkie” = wszystkie
-      BANDS = v === 'all' || (BANDS.length === 1 && BANDS[0] === i) ? all : [i]; lsSet(LSK.bands, JSON.stringify(BANDS)); render();
+      const all = R.rules.map((_, j) => j), i = +b.dataset.b;   // jeden przedział cykli naraz; ponowne dotknięcie = wszystkie (żaden nie podświetlony)
+      BANDS = BANDS.length === 1 && BANDS[0] === i ? all : [i]; lsSet(LSK.bands, JSON.stringify(BANDS)); render();
     });
     el.querySelectorAll('[data-stop]').forEach(b => b.onclick = e => { e.stopPropagation(); if (confirm('Usunąć z MOJE GRY?')) stopMy(b.dataset.stop); });
     el.querySelectorAll('[data-more]').forEach(b => b.onclick = () => { const i = +b.dataset.more; bandCap[i] = (bandCap[i] || 15) + 30; render(); });

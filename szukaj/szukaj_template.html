@@ -309,7 +309,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.3.2';
+const APP_VER = '1.4.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -603,7 +603,7 @@ function bandName(i) {
   const [mc, mb] = R.rules[i], lo = i ? R.rules[i - 1][0] + 1 : R.minCyc;
   return mc === null ? `★ ponad ${R.rules[i - 1][0]} cykli · max ${mb} BUST` : `${lo}–${mc} cykli · max ${mb} BUST`;
 }
-function bandShort(i) { const mc = R.rules[i][0]; return mc === null ? `★ ${R.rules[i - 1][0]}+` : `do ${mc}`; }
+function bandShort(i) { const mc = R.rules[i][0], lo = i ? R.rules[i - 1][0] + 1 : R.minCyc; return mc === null ? `★ ${lo}+` : `${lo}–${mc}`; }   // przedziały rozłączne: 100–200, 201–300, 301–400, ★ 401+
 const PHASE_ORD = { gra: 0, czeka: 1, trig: 2, wait: 3 };
 function phaseOf(r) { const n = codes.length; return r.ph === 2 ? (r.wz === n ? 'gra' : 'czeka') : r.ph === 1 ? 'trig' : 'wait'; }
 const PHASE_TXT = { gra: 'GRA na następnym', czeka: 'zakład ustawiony', trig: 'STEP otwarty', wait: 'czekam na STEP' };
@@ -675,7 +675,8 @@ function renderGra() {
   h += `<div class="flt"><span>widok:</span><button class="chip ${afterOnly ? 'on' : ''}" data-only="1">tylko GRA na następnym · ${graAll.length}</button>` +
     `<button class="chip mine ${onlyMine ? 'on' : ''}" data-mine="1">▶ MOJE MODELE · ${my.length}</button></div>`;
   const shown = i => R.rules[i][0] !== null || B[i].length > 0;
-  if (!onlyMine) h += `<div class="flt"><span>cykle:</span>${bandOrder().filter(shown).map(i => `<button class="chip ${BANDS.includes(i) ? 'on' : ''}" data-b="${i}">${bandShort(i)} · ${B[i].length}</button>`).join('')}</div>`;
+  if (!onlyMine) { const allB = R.rules.length === BANDS.length && R.rules.every((_, i) => BANDS.includes(i)), one = !allB && BANDS.length === 1 ? BANDS[0] : -1;
+    h += `<div class="flt"><span>cykle:</span><button class="chip ${allB ? 'on' : ''}" data-b="all">wszystkie · ${B.reduce((n, l) => n + l.length, 0)}</button>${R.rules.map((_, i) => `<button class="chip ${i === one ? 'on' : ''}" data-b="${i}">${bandShort(i)} · ${B[i].length}</button>`).join('')}</div>`; }
   if (onlyMine) h += `<div class="note"><b>MOJE MODELE</b> — tylko modele, które grasz (${myOn.length} w grze${my.length > myOn.length ? `, ${my.length - myOn.length} zakończone` : ''}). Dotknij „▶ MOJE MODELE” jeszcze raz, żeby wrócić do wszystkich.</div>` +
     (my.length ? '' : `<div class="empty" style="padding:10px 4px">Nie grasz jeszcze żadnego modelu. Przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`);
   else h += `<div class="note">W kryteriach: <b>${qn.toLocaleString('pl')}</b> z ${P.length.toLocaleString('pl')} modeli (min ${R.minCyc} cykli, min ${R.minBust} BUST, BUST od razu po BUST-cie max ${R.maxClose}×).
@@ -683,7 +684,7 @@ function renderGra() {
   if (my.length) h += myCardsHtml(out, my, myOn);
   for (const i of bandOrder()) {
     if (onlyMine) break;
-    if (!BANDS.includes(i) || !shown(i)) continue;
+    if (!BANDS.includes(i) || (!shown(i) && BANDS.length > 1)) continue;
     const L = B[i].filter(k => !afterOnly || phaseOf(out[k]) === 'gra'), cap = bandCap[i] || 15, isStar = R.rules[i][0] === null;
     const cnt = { gra: 0, czeka: 0, trig: 0, wait: 0 }; B[i].forEach(k => cnt[phaseOf(out[k])]++);
     let s = `<div class="sec${isStar ? ' star' : ''}"><div class="sh"><b>${bandName(i)}</b><span class="m">${B[i].length} po TRIGGERZE</span></div>
@@ -1060,7 +1061,8 @@ function render() {
     el.querySelectorAll('[data-only]').forEach(b => b.onclick = () => { afterOnly = !afterOnly; try { localStorage.setItem(CFG.app + '_szbust_v1_gra_only', afterOnly ? '1' : '0'); } catch (e) {} render(); });
     el.querySelectorAll('[data-mine]').forEach(b => b.onclick = () => { onlyMine = !onlyMine; try { localStorage.setItem(CFG.app + '_szbust_v1_onlymine', onlyMine ? '1' : '0'); } catch (e) {} render(); scrollTo(0, 0); });
     el.querySelectorAll('[data-b]').forEach(b => b.onclick = () => {
-      const i = +b.dataset.b; BANDS = BANDS.includes(i) ? BANDS.filter(x => x !== i) : [...BANDS, i]; lsSet(LSK.bands, JSON.stringify(BANDS)); render();
+      const all = R.rules.map((_, j) => j), v = b.dataset.b, i = +v;   // jeden przedział cykli naraz; ponowne dotknięcie albo „wszystkie” = wszystkie
+      BANDS = v === 'all' || (BANDS.length === 1 && BANDS[0] === i) ? all : [i]; lsSet(LSK.bands, JSON.stringify(BANDS)); render();
     });
     el.querySelectorAll('[data-stop]').forEach(b => b.onclick = e => { e.stopPropagation(); if (confirm('Usunąć z MOJE GRY?')) stopMy(b.dataset.stop); });
     el.querySelectorAll('[data-more]').forEach(b => b.onclick = () => { const i = +b.dataset.more; bandCap[i] = (bandCap[i] || 15) + 30; render(); });

@@ -325,7 +325,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.7.0';
+const APP_VER = '1.8.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -968,12 +968,13 @@ function flashCard() {
 function flashBet(b) {   // dotknięcie zakładu → MOJE: karta modelu na chwilę podświetlona niebieską ramką
   const k = P.findIndex(m => specKey(m) === specKey(b.m));
   if (k < 0) { toast(`Model ${b.id} nie jest teraz w puli tej appki`); return; }
-  if (!isMine(k)) addMyQuiet(k);
+  // model w MOJE → ramka w MOJE; usunięty z MOJE → ramka na GRA (jeśli tam jest), inaczej TABELA modelu na wierszu zakładu
+  const mine = isMine(k), tv = mine ? 'moje' : 'gra';
   closeStats();
   flashK = k; flashUntil = Date.now() + 2600;
-  if (view !== 'moje') { view = 'moje'; tabScroll = false; hlBet = -1; liveOn = false; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'moje')); }
+  if (view !== tv) { view = tv; tabScroll = false; hlBet = -1; liveOn = false; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === tv)); }
   render();
-  setTimeout(() => { const c = flashCard(); if (c) c.scrollIntoView({ block: 'center' }); }, 60);
+  setTimeout(() => { const c = flashCard(); if (c) c.scrollIntoView({ block: 'center' }); else if (!mine) { flashK = null; toast(`${b.id} nie ma w MOJE ani teraz na GRA — pokazuję TABELĘ modelu`); goBet(b); } }, 60);
   setTimeout(() => document.querySelectorAll('main .mc.bflash').forEach(c => c.classList.remove('bflash')), 2650);
 }
 function betResTxt(b) { return b.res === 'win' ? `✔ WIN +${2 * b.stake} zł` : b.res === 'lost' ? `✗ −${b.stake} zł` : b.res === 'none' ? '? model nie grał w tym wierszu' : b.res === '?' ? 'liczę…' : 'czeka na wynik'; }
@@ -986,7 +987,7 @@ function betBox(k) {   // okno statystyk modelu: lista zakładów + formularz (d
   const dn = r && r.ph === 2 ? r.wz + 1 : n + 1, dk = r ? r.bs + 1 : '', ds = r ? ST[r.bs] : '';
   return `<div class="bets"><div class="bt-h" id="btHd">MOJE ZAKŁADY${L.length ? ` · ${L.length} · postawione ${put} zł · wynik ${wyn >= 0 ? '+' : '−'}${Math.abs(wyn)} zł` : ' — zapisz zakład, który naprawdę zagrałeś'}</div>${rows}
     <div class="bt-f"><label>Nr wiersza<input id="btNr" type="number" inputmode="numeric" value="${dn}"></label><label>krok<input id="btK" type="number" inputmode="numeric" min="1" max="8" value="${dk}"></label><label>postawione zł<input id="btZl" type="number" inputmode="numeric" min="1" value="${ds}"></label><button class="bt-save" id="btSave">Zapisz zakład</button></div>
-    <div class="hint" style="margin-top:4px">Zapisany zakład dodaje model do MOJE GRY. Dotknij zakład → podświetlę ten model w MOJE. Zapis tylko w tym telefonie (BET ${tgt}).</div></div>`;
+    <div class="hint" style="margin-top:4px">Zapisany zakład dodaje model do MOJE GRY. Dotknij zakład → podświetlę ten model w MOJE (a gdy go tam nie ma — na GRA). Zapis tylko w tym telefonie (BET ${tgt}).</div></div>`;
 }
 function betsSummary() {   // MOJE: podsumowanie wg modelu i kroku + wszystkie zakłady (dotknięcie → TABELA na wierszu zakładu)
   needBetRes();
@@ -1145,6 +1146,7 @@ function render() {
     nm.classList.toggle('glow', nb > 0 && view !== 'moje' && lsGet(sk, '') !== String(codes.length));
   }
   if (view === 'moje') { el.querySelectorAll('[data-mk]').forEach(bindCard); flashCard(); }
+  if (view === 'gra') flashCard();
   if (view === 'tab' || view === 'moje') {
     const pb2 = $('playBtn'); if (pb2) pb2.onclick = () => startMy(selK);
     if (lab) {

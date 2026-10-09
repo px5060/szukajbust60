@@ -4,6 +4,7 @@ Trzecia appka z rodziny SZUKAJ dla ciągu **Test60** (BET x1x i xx1). Ten sam si
 i wspólne kody z **T60 RAZEM**. Osobna appka: własny adres, ikona (czerwona, „B60”) i instalacja.
 
 Adres: **https://px5060.github.io/szukajbust60/**
+- **MOJE ZAKŁADY** (jak w RAZEM): w oknie statystyk modelu (przytrzymaj kartę albo wiersz tabeli) zapis zakładu zagranego naprawdę — Nr wiersza, krok, kwota; wynik z tabeli modelu (✔ WIN = +2 × stawka, ✗ przegrany, czeka). W zakładce MOJE podsumowanie (model · zakł. · kroki · postawione · wynik, Σ, według kroku) i lista wszystkich zakładów. Dotknięcie zakładu → TABELA modelu na wierszu zakładu.
 
 ## Wersja A: BUST od razu po BUST-cie
 

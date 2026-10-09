@@ -153,6 +153,14 @@ th{color:var(--mu);font-weight:600}
 .chk.ok{border-color:#3b6a4d;background:#1d2f25}.chk.bad{border-color:#7a2e38;background:#2f1d21}
 .L8.Lrep{background:#8b0000;box-shadow:0 0 0 2px #ff6666}
 .note table td,.note table th{padding:3px 4px}
+.tbl tr.fx td{background:rgba(255,102,0,.38)!important;transition:background .4s}
+.bets{margin:10px 0 4px;padding:8px;border:1px solid var(--bd);border-radius:9px;background:var(--pan)}.bt-h{font-size:12.5px;font-weight:700;color:#ffb27a;margin-bottom:4px}
+.bt-r{display:flex;gap:6px;align-items:center;font-size:13px;padding:4px 0;border-bottom:1px solid var(--bd)}.bt-r>span:first-child{flex:1}.bt-go{cursor:pointer;text-decoration:underline dotted var(--mu)}.bt-r .pos{color:#5fd38a}.bt-r .neg{color:#ff8a8a}
+.bt-del{background:none;border:0;color:var(--mu);font-size:15px;padding:0 4px}.bt-f{display:flex;gap:5px;align-items:flex-end;margin-top:6px;flex-wrap:wrap}.bt-f label{display:flex;flex-direction:column;font-size:11px;color:var(--mu)}
+.bt-f input{width:66px;padding:6px;border-radius:7px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:15px;font-weight:700}.bt-f #btNr{width:86px}.bt-save{flex:1;min-width:110px;padding:9px;border-radius:8px;border:0;background:#FF6600;color:#fff;font-weight:700;font-size:13.5px}
+.bsum{margin:8px 0 10px;padding:8px;border:1px solid #7030A0;border-radius:10px;background:var(--pan)}.bsum h3{margin:0 0 5px;font-size:13.5px;color:#ffb27a}.bsum table{width:100%;border-collapse:collapse;font-size:12.5px}
+.bsum th{font-size:10.5px;color:var(--mu);font-weight:600;text-align:right;padding:3px}.bsum td{padding:4px 3px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}.bsum th:first-child,.bsum td:first-child{text-align:left;white-space:normal}
+.bsum td.ks{white-space:normal;text-align:left;font-size:11.5px}.bsum tr.go{cursor:pointer}.bsum tr.go:active td{background:rgba(255,102,0,.25)}.bsum tr.s td{font-weight:800;border-top:1px solid #7030A0}.bsum .pos{color:#5fd38a;font-weight:700}.bsum .neg{color:#ff8a8a;font-weight:700}.bsum .mu{color:var(--mu);font-size:11px}
 </style>
 </head>
 <body>
@@ -302,6 +310,12 @@ onmessage = e => {
     N = N0; postMessage({ type: 'row', id: d.id, row: d.row, bets });
   }
   if (d.type === 'label') { const r = labels(d.m, d.R); postMessage({ type: 'label', id: d.id, ...r }, [r.K.buffer, r.A.buffer, r.B.buffer, r.Q.buffer]); }
+  if (d.type === 'betres') {   // MOJE ZAKŁADY: wynik w wierszu zakładu — 6 WIN, 7/8 przegrana, inne = model nie grał
+    const L = new Map(), res = {};
+    d.bets.forEach(b => { const key = b.m.join('|'); if (!L.has(key)) L.set(key, labels(b.m, d.R).K); const K = L.get(key);
+      res[b.t] = b.row >= N ? null : K[b.row] === 6 ? 'win' : K[b.row] === 7 || K[b.row] === 8 ? 'lost' : 'none'; });
+    postMessage({ type: 'betres', id: d.id, res });
+  }
   if (d.type === 'search') { const f = search(d); postMessage({ type: 'search', found: f }); }
 };
 </script>
@@ -310,7 +324,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.5.0';
+const APP_VER = '1.6.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -376,9 +390,12 @@ function renderSheet() {
       ? `<button class="btn playing" id="spStop">${res ? (res.win ? '✔ WIN' : '✖ BUST') + ` — gra zakończona (${res.pnl >= 0 ? '+' : ''}${res.pnl} zł). Usuń z MOJE GRY` : `■ W MOJE GRY od w.${g.start + 1} (wejście k${g.s0}) — przestań śledzić`}</button>`
       : `<button class="btn play" id="spPlay">▶ Gram ten model — dodaj do MOJE GRY (teraz krok ${r.bs + 1}, ${ST[r.bs]} zł)</button><div class="hint" style="margin-top:4px">${afterB(r) ? 'Trwa cykl po BUST-cie. ' : 'Uwaga: model nie jest teraz tuż po BUST-cie. '}Model zostanie w MOJE GRY na górze ekranu GRA do WIN albo kroku 8, niezależnie od kryteriów i filtrów.</div>`}
     ${ready ? statsHtml(r) : '<div class="hint" style="margin-top:10px">Liczę statystyki…</div>'}
+    ${r ? betBox(k) : ''}
     <button class="btn more" id="spTab" style="margin-top:10px">Otwórz TABELĘ tego modelu</button><button class="btn more" id="spClose" style="margin-top:6px">✕ Zamknij</button></div>`;
   $('spX').onclick = closeStats; $('spClose').onclick = closeStats;
   $('spTab').onclick = () => { closeStats(); openTab(k); };
+  const bsv = $('btSave'); if (bsv) bsv.onclick = () => { const nr = +$('btNr').value, kk = +$('btK').value, zl = +$('btZl').value;
+    if (!(nr >= 1) || !(kk >= 1 && kk <= 8) || !(zl > 0)) { $('btHd').textContent = 'Podaj Nr wiersza, krok 1–8 i kwotę w zł'; return; } addBet(k, nr - 1, kk, zl); renderSheet(); };
   const p = $('spPlay'); if (p) p.onclick = () => { startMy(k); renderSheet(); };
   const s = $('spStop'); if (s) s.onclick = () => { if (confirm('Usunąć z MOJE GRY?')) { stopMy(specKey(m)); renderSheet(); } };
 }
@@ -407,11 +424,13 @@ function mid(k, m) { return (k < POOLS[tgt].pool.length ? 'P' : 'N') + (k < POOL
 // ---- worker ----
 const W = new Worker(URL.createObjectURL(new Blob([$('wsrc').textContent], { type: 'text/javascript' })));
 let lastEval = null, evalId = 0, P = [];
+let focusRow = null;   // MOJE ZAKŁADY: wiersz zakładu do pokazania w TABELI
 let selK = null, lab = null, labId = 0, labFor = '', tabN = 150, tabEv = false, tabScroll = true, hlBet = -1, liveOn = false;   // hlBet = podświetlony dawny zakład (wiersz); liveOn = ramki stanu TERAZ (domyślnie schowane)
 let tabAsc = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_asc') !== '0'; } catch (e) { return true; } })();   // najstarsze u góry   // TABELA: wybrany model + jego etykiety
 W.onmessage = e => {
   const d = e.data;
   if (d.type === 'eval') { if (d.id !== evalId) return; lastEval = d; busy = false; render(); if (pendingPop && codes.length === pendingPop.row + 1) { showResultPop(pendingPop); } pendingPop = null; if (statK !== null) { needLabels(); renderSheet(); } }
+  if (d.type === 'betres') { if (d.id !== betResId) return; betRes = d.res; if (view === 'moje') render(); if (statK !== null) renderSheet(); return; }
   if (d.type === 'label') { if (d.id !== labId) return; lab = d; if (view === 'tab' || view === 'moje') render(); if (statK !== null) renderSheet(); }
   if (d.type === 'row') { if (d.id !== rowId) return; rowPop(d); return; }
   if (d.type === 'prog') { searching = d; if (view === 'ust') render(); }
@@ -907,13 +926,82 @@ function statsHtml(r) {
 }
 let tabMine = false;   // TABELA wewnątrz zakładki MOJE (bez listy wyboru — wybór kartą)
 function openMine(k) { selK = k; tabN = 150; tabScroll = true; hlBet = -1; liveOn = false; view = 'moje'; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'moje')); scrollTo(0, 0); render(); }
+// ===== MOJE ZAKŁADY (jak w RAZEM): zakłady zagrane naprawdę — Nr wiersza · krok · kwota; wynik z etykiet modelu (WIN = +2 × stawka, kurs 3) =====
+const SPECN = specKey(['0', '1', '2', '3', '4', '5', '6', '7']).split('|').length;   // ile pól opisuje model (SZUKAJ / BUST 5, SZUKAJ+ 7)
+const BKEY = () => LSK.my.replace(/moje_$/, 'bets_') + tgt;
+function getBets() { try { const v = JSON.parse(lsGet(BKEY(), '[]')); return Array.isArray(v) ? v.filter(b => b && Array.isArray(b.m)) : []; } catch (e) { return []; } }
+function setBets(a) { if (!lsSet(BKEY(), JSON.stringify(a))) alert('BŁĄD zapisu pamięci telefonu!'); betResKey = ''; }
+let betRes = {}, betResKey = '', betResId = 0;
+function needBetRes() {   // wyniki liczy worker z etykiet modeli, na których są zakłady
+  const B = getBets(), key = codes.length + '|' + tgt + '|' + B.map(b => b.t).join(',');
+  if (key === betResKey) return; betResKey = key; betResId++;
+  if (B.length) W.postMessage({ type: 'betres', id: betResId, bets: B.map(b => ({ t: b.t, m: b.m, row: b.row })), R }); else betRes = {};
+}
+function betList(spec) {
+  const n = codes.length;
+  return getBets().filter(b => !spec || specKey(b.m) === spec).sort((a, b) => a.row - b.row || a.t - b.t)
+    .map(b => Object.assign({}, b, { res: b.row >= n ? null : betRes[b.t] === undefined ? '?' : betRes[b.t] }));
+}
+const betVal = b => b.res === 'win' ? 2 * b.stake : b.res === 'lost' ? -b.stake : 0;
+const zlTxt = v => `<span class="${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('pl')}</span>`;
+function addBet(k, row, step, stake) {
+  const a = getBets(); a.push({ m: P[k].slice(0, SPECN), id: mid(k, P[k]), row, step, stake, t: Date.now() }); setBets(a);
+  toast(`Zapisano zakład ${mid(k, P[k])}: w.${row + 1} · k${step} · ${stake} zł`);
+}
+function betResTxt(b) { return b.res === 'win' ? `✔ WIN +${2 * b.stake} zł` : b.res === 'lost' ? `✗ −${b.stake} zł` : b.res === 'none' ? '? model nie grał w tym wierszu' : b.res === '?' ? 'liczę…' : 'czeka na wynik'; }
+function betBox(k) {   // okno statystyk modelu: lista zakładów + formularz (domyślnie wiersz zakładu modelu albo następny, bieżący krok i stawka)
+  needBetRes();
+  const m = P[k], r = lastEval && lastEval.out[k], L = betList(specKey(m)), n = codes.length;
+  let put = 0, wyn = 0;
+  const rows = L.map(b => { put += b.stake; wyn += betVal(b);
+    return `<div class="bt-r"><span class="bt-go" data-bgo="${b.t}">w.${(b.row + 1).toLocaleString('pl')} · k${b.step} · <b>${b.stake} zł</b> ›</span><span class="${b.res === 'win' ? 'pos' : b.res === 'lost' ? 'neg' : ''}">${betResTxt(b)}</span><button class="bt-del" data-bdel="${b.t}" title="usuń wpis">✕</button></div>`; }).join('');
+  const dn = r && r.ph === 2 ? r.wz + 1 : n + 1, dk = r ? r.bs + 1 : '', ds = r ? ST[r.bs] : '';
+  return `<div class="bets"><div class="bt-h" id="btHd">MOJE ZAKŁADY${L.length ? ` · ${L.length} · postawione ${put} zł · wynik ${wyn >= 0 ? '+' : '−'}${Math.abs(wyn)} zł` : ' — zapisz zakład, który naprawdę zagrałeś'}</div>${rows}
+    <div class="bt-f"><label>Nr wiersza<input id="btNr" type="number" inputmode="numeric" value="${dn}"></label><label>krok<input id="btK" type="number" inputmode="numeric" min="1" max="8" value="${dk}"></label><label>postawione zł<input id="btZl" type="number" inputmode="numeric" min="1" value="${ds}"></label><button class="bt-save" id="btSave">Zapisz zakład</button></div>
+    <div class="hint" style="margin-top:4px">Dotknij zakład → TABELA modelu na wierszu zakładu. Zapis tylko w tym telefonie (BET ${tgt}).</div></div>`;
+}
+function betsSummary() {   // MOJE: podsumowanie wg modelu i kroku + wszystkie zakłady (dotknięcie → TABELA na wierszu zakładu)
+  needBetRes();
+  const all = betList(null);
+  if (!all.length) return `<div class="bsum"><h3>MOJE ZAKŁADY · BET ${tgt}</h3><div class="mu">Brak zapisanych zakładów. Przytrzymaj kartę albo wiersz tabeli modelu → MOJE ZAKŁADY → „Zapisz zakład”.</div></div>`;
+  const by = new Map(), KS2 = {}, T = { n: 0, w: 0, l: 0, c: 0, put: 0, wyn: 0 };
+  all.forEach(b => { const key = specKey(b.m); if (!by.has(key)) by.set(key, []); by.get(key).push(b); });
+  const cnt = (n, w, l, c) => `${n}${w ? ` <span class="pos">✔${w}</span>` : ''}${l ? ` <span class="neg">✗${l}</span>` : ''}${c ? ` <span class="mu">⏳${c}</span>` : ''}`;
+  const rows = [...by.values()].map(L => {
+    const r = { n: L.length, w: 0, l: 0, c: 0, put: 0, wyn: 0 }, S = {};
+    L.forEach(b => { const v = betVal(b); r.put += b.stake; r.wyn += v; if (b.res === 'win') r.w++; else if (b.res === 'lost') r.l++; else r.c++;
+      S[b.step] = (S[b.step] || 0) + 1; const q = KS2[b.step] = KS2[b.step] || { n: 0, w: 0, put: 0, wyn: 0 }; q.n++; q.put += b.stake; q.wyn += v; if (b.res === 'win') q.w++; });
+    Object.keys(T).forEach(z => T[z] += r[z]);
+    const ks = Object.keys(S).sort((a, b) => a - b).map(s => `k${s}${S[s] > 1 ? '×' + S[s] : ''}`).join(' ');
+    return `<tr class="go" data-bgo="${L[L.length - 1].t}"><td><b>${esc(L[0].id)}</b>${P.some(m => specKey(m) === specKey(L[0].m)) ? '' : ' <span class="mu">(poza pulą)</span>'}</td><td>${cnt(r.n, r.w, r.l, r.c)}</td><td class="ks">${ks}</td><td>${r.put.toLocaleString('pl')}</td><td>${zlTxt(r.wyn)}</td></tr>`;
+  }).join('');
+  const kr = Object.keys(KS2).sort((a, b) => a - b).map(s => { const z = KS2[s]; return `<tr><td>k${s}</td><td>${cnt(z.n, z.w, 0, 0)}</td><td>${z.put.toLocaleString('pl')}</td><td>${zlTxt(z.wyn)}</td></tr>`; }).join('');
+  const list = all.slice().sort((a, b) => b.row - a.row || b.t - a.t).map(b => `<tr class="go" data-bgo="${b.t}"><td>w.${(b.row + 1).toLocaleString('pl')}<br><span class="mu">${esc(b.id)}</span></td><td class="ks">k${b.step} · ${b.stake} zł</td><td>${b.res === 'win' ? '<span class="pos">✔ WIN</span>' : b.res === 'lost' ? '<span class="neg">✗</span>' : '<span class="mu">⏳</span>'}</td><td>${zlTxt(betVal(b))} ›</td></tr>`).join('');
+  return `<div class="bsum"><h3>MOJE ZAKŁADY · BET ${tgt} — podsumowanie</h3><table><tr><th>Model</th><th>zakł.</th><th class="ks">kroki</th><th>postawione zł</th><th>wynik zł</th></tr>${rows}
+    <tr class="s"><td>Σ</td><td>${cnt(T.n, T.w, T.l, T.c)}</td><td></td><td>${T.put.toLocaleString('pl')}</td><td>${zlTxt(T.wyn)}</td></tr></table>
+    <h3 style="margin-top:8px">Według kroku</h3><table><tr><th>krok</th><th>zakł.</th><th>postawione zł</th><th>wynik zł</th></tr>${kr}</table>
+    <h3 style="margin-top:8px">Wszystkie zakłady (najnowsze u góry)</h3><table>${list}</table>
+    <div class="mu" style="margin-top:5px">Dotknij model albo zakład → TABELA modelu na wierszu zakładu. ✔ WIN = +2 × stawka (kurs 3) · ✗ przegrany = −stawka · ⏳ czeka albo model nie grał w tym wierszu (0 zł).</div></div>`;
+}
+function goBet(b) {   // TABELA modelu zakładu, przewinięta do wiersza zakładu
+  const k = P.findIndex(m => specKey(m) === specKey(b.m));
+  if (k < 0) { toast(`Model ${b.id} nie jest teraz w puli tej appki`); return; }
+  closeStats(); selK = k; tabN = Math.max(150, codes.length - b.row + 40); tabScroll = false; hlBet = -1; liveOn = false; focusRow = b.row; view = 'tab';
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'tab')); render();
+}
+document.addEventListener('click', e => {
+  const t = e.target && e.target.closest ? e.target : null; if (!t) return;
+  const d = t.closest('[data-bdel]'), g = t.closest('[data-bgo]');
+  if (d) { e.stopPropagation(); if (confirm('Usunąć ten wpis z MOJE ZAKŁADY?')) { setBets(getBets().filter(b => b.t !== +d.dataset.bdel)); if (statK !== null) renderSheet(); render(); } return; }
+  if (g) { e.stopPropagation(); const b = getBets().find(x => x.t === +g.dataset.bgo); if (b) goBet(b); }
+}, true);
 function renderMoje() {
   if (!lastEval) return `<div class="ban idle">Liczę…</div>`;
   const out = lastEval.out, my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0), myOn = my.filter(x => !myResult(x.g, out[x.k]));
-  if (!my.length) return `<div class="note"><b>MOJE MODELE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`;
+  if (!my.length) return `<div class="note"><b>MOJE MODELE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA przytrzymaj kartę modelu → „▶ Gram ten model”.</div>` + betsSummary();
   if (!my.some(x => x.k === selK)) { selK = (myOn[0] || my[0]).k; needLabels(); }
   tabMine = true;
-  const h = myCardsHtml(out, my, myOn, selK) + `<div class="note" style="margin-top:4px">Tabela modelu <b>${mid(selK, P[selK])}</b> — dotknij innej karty wyżej, żeby zmienić model.</div>` + renderTab();
+  const h = myCardsHtml(out, my, myOn, selK) + betsSummary() + `<div class="note" style="margin-top:4px">Tabela modelu <b>${mid(selK, P[selK])}</b> — dotknij innej karty wyżej, żeby zmienić model.</div>` + renderTab();
   tabMine = false;
   return h;
 }
@@ -1031,6 +1119,7 @@ function render() {
   if (view === 'tab' || view === 'moje') {
     const pb2 = $('playBtn'); if (pb2) pb2.onclick = () => startMy(selK);
     if (lab) {
+      if (focusRow != null && lab.K[focusRow] >= 6 && lab.K[focusRow] <= 8) hlBet = focusRow;
       applyHL(el);
       const nr = $('nextRow'); if (nr) { nr.style.cursor = 'pointer'; nr.onclick = () => { hlBet = -1; liveOn = !liveOn; applyHL(el); }; }
       el.querySelectorAll('tr[data-i], #nextRow').forEach(r => {   // przytrzymanie wiersza → STATYSTYKI modelu
@@ -1055,6 +1144,7 @@ function render() {
     el.querySelectorAll('[data-ord]').forEach(b => b.onclick = () => { tabAsc = b.dataset.ord === '1'; try { localStorage.setItem(CFG.app + '_szbust_v1_asc', tabAsc ? '1' : '0'); } catch (e) {} tabScroll = true; render(); });
     if (lab && tabScroll) { tabScroll = false; if (tabAsc) setTimeout(() => scrollTo(0, document.documentElement.scrollHeight), 0); }
     doFlash(el);
+    if (lab && focusRow != null) { const fr = el.querySelector(`tr[data-i="${focusRow}"]`); focusRow = null; if (fr) setTimeout(() => { fr.scrollIntoView({ block: 'center' }); fr.classList.add('fx'); setTimeout(() => fr.classList.remove('fx'), 2600); }, 0); }
     $('evChk') && ($('evChk').onchange = e => { tabEv = e.target.checked; render(); });
     const mb = $('moreBtn'); if (mb) mb.onclick = () => { const h0 = document.documentElement.scrollHeight, y0 = scrollY; tabN += 150; render(); if (tabAsc) scrollTo(0, y0 + document.documentElement.scrollHeight - h0); };
   }

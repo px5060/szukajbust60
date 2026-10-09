@@ -153,6 +153,7 @@ th{color:var(--mu);font-weight:600}
 .chk.ok{border-color:#3b6a4d;background:#1d2f25}.chk.bad{border-color:#7a2e38;background:#2f1d21}
 .L8.Lrep{background:#8b0000;box-shadow:0 0 0 2px #ff6666}
 .note table td,.note table th{padding:3px 4px}
+.mc.bflash{outline:3px solid #2e9bff!important;outline-offset:2px;box-shadow:0 0 0 7px rgba(46,155,255,.35)!important;transition:box-shadow .3s}
 .tbl tr.fx td{background:rgba(255,102,0,.38)!important;transition:background .4s}
 .bets{margin:10px 0 4px;padding:8px;border:1px solid var(--bd);border-radius:9px;background:var(--pan)}.bt-h{font-size:12.5px;font-weight:700;color:#ffb27a;margin-bottom:4px}
 .bt-r{display:flex;gap:6px;align-items:center;font-size:13px;padding:4px 0;border-bottom:1px solid var(--bd)}.bt-r>span:first-child{flex:1}.bt-go{cursor:pointer;text-decoration:underline dotted var(--mu)}.bt-r .pos{color:#5fd38a}.bt-r .neg{color:#ff8a8a}
@@ -324,7 +325,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.6.0';
+const APP_VER = '1.7.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -945,8 +946,35 @@ function betList(spec) {
 const betVal = b => b.res === 'win' ? 2 * b.stake : b.res === 'lost' ? -b.stake : 0;
 const zlTxt = v => `<span class="${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('pl')}</span>`;
 function addBet(k, row, step, stake) {
-  const a = getBets(); a.push({ m: P[k].slice(0, SPECN), id: mid(k, P[k]), row, step, stake, t: Date.now() }); setBets(a);
+  const a = getBets(); a.push({ m: P[k].slice(0, SPECN), id: mid(k, P[k]), row, step, stake, t: Date.now(), my: 1 }); setBets(a);
+  if (!isMine(k)) addMyQuiet(k);
   toast(`Zapisano zakład ${mid(k, P[k])}: w.${row + 1} · k${step} · ${stake} zł`);
+}
+function addMyQuiet(k) {   // model z zapisanym zakładem → MOJE GRY (bez zmiany ekranu)
+  const r = lastEval && lastEval.out[k], a = getMy().filter(g => specKey(g.m) !== specKey(P[k]));
+  a.push({ m: P[k].slice(0, SPECN), id: mid(k, P[k]), start: codes.length, s0: r ? r.bs + 1 : 1, t: Date.now() }); setMy(a);
+}
+function ensureMyFromBets() {   // zakłady zapisane wcześniej: ich modele raz trafiają do MOJE GRY (usunięcie z MOJE później jest szanowane)
+  if (!lastEval) return; let ch = false;
+  const B = getBets(); B.forEach(b => { if (b.my) return; const k = P.findIndex(m => specKey(m) === specKey(b.m)); if (k >= 0 && !isMine(k)) addMyQuiet(k); b.my = 1; ch = true; });
+  if (ch) { lsSet(BKEY(), JSON.stringify(B)); }
+}
+let flashK = null, flashUntil = 0;   // niebieska ramka karty w MOJE (trzyma się też po przerysowaniu ekranu)
+function flashCard() {
+  if (flashK == null || Date.now() > flashUntil) return null;
+  const c = document.querySelector(`main .sec.mine .mc[data-mk="${flashK}"]`) || document.querySelector(`main .mc[data-mk="${flashK}"]`);
+  if (c) c.classList.add('bflash'); return c;
+}
+function flashBet(b) {   // dotknięcie zakładu → MOJE: karta modelu na chwilę podświetlona niebieską ramką
+  const k = P.findIndex(m => specKey(m) === specKey(b.m));
+  if (k < 0) { toast(`Model ${b.id} nie jest teraz w puli tej appki`); return; }
+  if (!isMine(k)) addMyQuiet(k);
+  closeStats();
+  flashK = k; flashUntil = Date.now() + 2600;
+  if (view !== 'moje') { view = 'moje'; tabScroll = false; hlBet = -1; liveOn = false; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'moje')); }
+  render();
+  setTimeout(() => { const c = flashCard(); if (c) c.scrollIntoView({ block: 'center' }); }, 60);
+  setTimeout(() => document.querySelectorAll('main .mc.bflash').forEach(c => c.classList.remove('bflash')), 2650);
 }
 function betResTxt(b) { return b.res === 'win' ? `✔ WIN +${2 * b.stake} zł` : b.res === 'lost' ? `✗ −${b.stake} zł` : b.res === 'none' ? '? model nie grał w tym wierszu' : b.res === '?' ? 'liczę…' : 'czeka na wynik'; }
 function betBox(k) {   // okno statystyk modelu: lista zakładów + formularz (domyślnie wiersz zakładu modelu albo następny, bieżący krok i stawka)
@@ -958,7 +986,7 @@ function betBox(k) {   // okno statystyk modelu: lista zakładów + formularz (d
   const dn = r && r.ph === 2 ? r.wz + 1 : n + 1, dk = r ? r.bs + 1 : '', ds = r ? ST[r.bs] : '';
   return `<div class="bets"><div class="bt-h" id="btHd">MOJE ZAKŁADY${L.length ? ` · ${L.length} · postawione ${put} zł · wynik ${wyn >= 0 ? '+' : '−'}${Math.abs(wyn)} zł` : ' — zapisz zakład, który naprawdę zagrałeś'}</div>${rows}
     <div class="bt-f"><label>Nr wiersza<input id="btNr" type="number" inputmode="numeric" value="${dn}"></label><label>krok<input id="btK" type="number" inputmode="numeric" min="1" max="8" value="${dk}"></label><label>postawione zł<input id="btZl" type="number" inputmode="numeric" min="1" value="${ds}"></label><button class="bt-save" id="btSave">Zapisz zakład</button></div>
-    <div class="hint" style="margin-top:4px">Dotknij zakład → TABELA modelu na wierszu zakładu. Zapis tylko w tym telefonie (BET ${tgt}).</div></div>`;
+    <div class="hint" style="margin-top:4px">Zapisany zakład dodaje model do MOJE GRY. Dotknij zakład → podświetlę ten model w MOJE. Zapis tylko w tym telefonie (BET ${tgt}).</div></div>`;
 }
 function betsSummary() {   // MOJE: podsumowanie wg modelu i kroku + wszystkie zakłady (dotknięcie → TABELA na wierszu zakładu)
   needBetRes();
@@ -981,7 +1009,7 @@ function betsSummary() {   // MOJE: podsumowanie wg modelu i kroku + wszystkie z
     <tr class="s"><td>Σ</td><td>${cnt(T.n, T.w, T.l, T.c)}</td><td></td><td>${T.put.toLocaleString('pl')}</td><td>${zlTxt(T.wyn)}</td></tr></table>
     <h3 style="margin-top:8px">Według kroku</h3><table><tr><th>krok</th><th>zakł.</th><th>postawione zł</th><th>wynik zł</th></tr>${kr}</table>
     <h3 style="margin-top:8px">Wszystkie zakłady (najnowsze u góry)</h3><table>${list}</table>
-    <div class="mu" style="margin-top:5px">Dotknij model albo zakład → TABELA modelu na wierszu zakładu. ✔ WIN = +2 × stawka (kurs 3) · ✗ przegrany = −stawka · ⏳ czeka albo model nie grał w tym wierszu (0 zł).</div></div>`;
+    <div class="mu" style="margin-top:5px">Dotknij model albo zakład → podświetlę ten model w MOJE GRY (wyżej). ✔ WIN = +2 × stawka (kurs 3) · ✗ przegrany = −stawka · ⏳ czeka albo model nie grał w tym wierszu (0 zł).</div></div>`;
 }
 function goBet(b) {   // TABELA modelu zakładu, przewinięta do wiersza zakładu
   const k = P.findIndex(m => specKey(m) === specKey(b.m));
@@ -993,9 +1021,10 @@ document.addEventListener('click', e => {
   const t = e.target && e.target.closest ? e.target : null; if (!t) return;
   const d = t.closest('[data-bdel]'), g = t.closest('[data-bgo]');
   if (d) { e.stopPropagation(); if (confirm('Usunąć ten wpis z MOJE ZAKŁADY?')) { setBets(getBets().filter(b => b.t !== +d.dataset.bdel)); if (statK !== null) renderSheet(); render(); } return; }
-  if (g) { e.stopPropagation(); const b = getBets().find(x => x.t === +g.dataset.bgo); if (b) goBet(b); }
+  if (g) { e.stopPropagation(); const b = getBets().find(x => x.t === +g.dataset.bgo); if (b) flashBet(b); }
 }, true);
 function renderMoje() {
+  ensureMyFromBets();
   if (!lastEval) return `<div class="ban idle">Liczę…</div>`;
   const out = lastEval.out, my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0), myOn = my.filter(x => !myResult(x.g, out[x.k]));
   if (!my.length) return `<div class="note"><b>MOJE MODELE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA przytrzymaj kartę modelu → „▶ Gram ten model”.</div>` + betsSummary();
@@ -1115,7 +1144,7 @@ function render() {
     nm.textContent = `MOJE · ${getMy().length}${nb ? ' ▼' + nb : ''}`;
     nm.classList.toggle('glow', nb > 0 && view !== 'moje' && lsGet(sk, '') !== String(codes.length));
   }
-  if (view === 'moje') el.querySelectorAll('[data-mk]').forEach(bindCard);
+  if (view === 'moje') { el.querySelectorAll('[data-mk]').forEach(bindCard); flashCard(); }
   if (view === 'tab' || view === 'moje') {
     const pb2 = $('playBtn'); if (pb2) pb2.onclick = () => startMy(selK);
     if (lab) {

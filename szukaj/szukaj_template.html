@@ -85,6 +85,7 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:var(--pan);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;background:none;border:0;color:var(--mu);padding:12px 0;font-size:14px;font-weight:700}
 nav button.on{color:var(--btn)}
+.wgb{margin:10px 0 -3px;padding:6px 9px;border-radius:8px 8px 0 0;font-size:12.5px;background:#2a2f3d;color:#e8ebf2}.wgb.lost{background:#4a2224}.wgb.pend{background:#5a3a10}.wgb+.mc{border-top-left-radius:0;border-top-right-radius:0;margin-top:0}.sec.wg0 .sh b{color:#FF6600}details.wgd{margin:10px 0;padding:6px 8px;border:1px solid var(--bd);border-radius:8px;font-size:12.5px}details.wgd summary{cursor:pointer;font-weight:700}.wgl{padding:4px 0;border-top:1px solid var(--bd)}
 nav button.glow{background:#FF6600;color:#fff;animation:mjg .8s ease-in-out infinite alternate}
 @keyframes mjg{from{box-shadow:inset 0 0 0 0 #ffffff00}to{box-shadow:inset 0 0 14px 3px #ffffffaa}}
 table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
@@ -325,7 +326,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.8.1';
+const APP_VER = '1.9.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -352,7 +353,8 @@ const KSTEPS = [1, 2, 3, 4, 5, 6, 7];   // kroki do wyboru na GRA (k1 = pierwszy
 let KS = (() => { try { const v = JSON.parse(lsGet(LSK.ks, '')); if (Array.isArray(v)) return v.filter(k => KSTEPS.includes(k)); } catch (e) {} return [5, 6, 7]; })();
 let afterOnly = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_gra_only') === '1'; } catch (e) { return false; } })();   // GRA: tylko GRA na następnym
 let view = 'gra', busy = false, searching = null, bandCap = {};
-let onlyMine = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_onlymine') === '1'; } catch (e) { return false; } })();   // GRA: tylko MOJE MODELE
+let mojeTab = 'gry';   // ▶ MOJE: podzakładki „gry” (karty) i „w grze” (moje zakłady: postawione i po przegranym kroku)
+let onlyMine = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_onlymine') === '1'; } catch (e) { return false; } })();   // GRA: tylko MOJE
 let BANDS = (() => { try { const v = JSON.parse(lsGet(LSK.bands, '')); if (Array.isArray(v)) return v; } catch (e) {} return R.rules.map((_, i) => i); })();
 function foundKey() { return LSK.found + tgt; }
 function getFound() { try { const v = JSON.parse(lsGet(foundKey(), '[]')); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
@@ -431,7 +433,7 @@ let tabAsc = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_as
 W.onmessage = e => {
   const d = e.data;
   if (d.type === 'eval') { if (d.id !== evalId) return; lastEval = d; busy = false; render(); if (pendingPop && codes.length === pendingPop.row + 1) { showResultPop(pendingPop); } pendingPop = null; if (statK !== null) { needLabels(); renderSheet(); } }
-  if (d.type === 'betres') { if (d.id !== betResId) return; betRes = d.res; if (view === 'moje') render(); if (statK !== null) renderSheet(); return; }
+  if (d.type === 'betres') { if (d.id !== betResId) return; betRes = d.res; if (view === 'moje' || (view === 'gra' && onlyMine && mojeTab === 'wg')) render(); if (statK !== null) renderSheet(); return; }
   if (d.type === 'label') { if (d.id !== labId) return; lab = d; if (view === 'tab' || view === 'moje') render(); if (statK !== null) renderSheet(); }
   if (d.type === 'row') { if (d.id !== rowId) return; rowPop(d); return; }
   if (d.type === 'prog') { searching = d; if (view === 'ust') render(); }
@@ -679,6 +681,51 @@ function repHtml(full) {
   return h + `<div class="hint">Uwaga: pula appki była wybrana na całej historii (razem z okresem sprawdzenia), więc jej procenty są zaniżone. Uczciwy wynik daje test z chmury: tam wybór był robiony tylko na nauce.
     Jeśli wybrane modele nie mają wyraźnie mniej BUST-ów po BUST-cie niż wszystkie modele, to historia bez powtórek nie chroni przed BUST-em w przyszłości.</div></div>`;
 }
+// ===== MOJE · w grze (jak w RAZEM): moje zapisane zakłady — postawione, czekające na wynik, i przegrane, gdy progresja modelu trwa (kolejny krok przed nami) =====
+const wrs = d => d === 1 ? 'wiersz' : d <= 4 ? 'wiersze' : 'wierszy';
+function wgList(out) {
+  needBetRes();
+  const n = codes.length, last = new Map(), L = [];
+  getBets().forEach(b => { const s = specKey(b.m), o = last.get(s); if (!o || b.row > o.row || (b.row === o.row && b.t > o.t)) last.set(s, b); });   // ostatni zakład każdego modelu
+  last.forEach(b => {
+    const k = P.findIndex(m => specKey(m) === specKey(b.m)), r = k >= 0 ? out[k] : null;
+    if (b.row >= n) return L.push({ b, k, r, st: 'pend', d: b.row + 1 - n });   // postawiony — wiersz jeszcze nie wpisany
+    const res = betRes[b.t];
+    if (res === undefined || res === '?') return L.push({ b, k, r, st: 'calc' });
+    if (res === 'lost' && r && r.le < b.row) return L.push({ b, k, r, st: 'open', d: r.ph === 2 ? r.wz + 1 - n : 0 });   // przegrany, model bez WIN / BUST od tego czasu
+    L.push({ b, k, r, st: 'done', res });
+  });
+  return L;
+}
+const wgCount = out => wgList(out).filter(x => x.st !== 'done').length;
+function wgHtml(out) {
+  const L = wgList(out), act = L.filter(x => x.st !== 'done'), done = L.filter(x => x.st === 'done').sort((a, b) => b.b.row - a.b.row);
+  const lvl = x => x.st === 'pend' ? (x.d === 1 ? 0 : 1) : x.st === 'open' ? (x.d === 1 ? 0 : x.d ? 2 : 3) : 3;
+  const bet = b => `w.${(b.row + 1).toLocaleString('pl')} · k${b.step} · ${b.stake} zł`;
+  const head = x => {
+    if (x.st === 'pend') return `<div class="wgb pend">● POSTAWIONY ${bet(x.b)} — ${x.d === 1 ? '<b>wynik po następnym kodzie</b>' : `wynik za ${x.d} ${wrs(x.d)}`}</div>`;
+    if (x.st === 'calc') return `<div class="wgb">${bet(x.b)} — liczę wynik…</div>`;
+    const nx = `k${x.r.bs + 1} ${ST[x.r.bs]} zł`, mb = x.d ? null : minToBet(P[x.k], x.r);
+    return `<div class="wgb lost">✗ ${bet(x.b)} przegrany → mój kolejny krok <b>${nx}</b> — ${x.d === 1 ? '<b>▼ TERAZ: GRA na następnym wierszu</b>' : x.d ? `GRA za ${x.d} ${wrs(x.d)} (w.${(x.r.wz + 1).toLocaleString('pl')})` : mb ? `najwcześniej GRA za ${mb.d} ${wrs(mb.d)}` : 'czeka na STEP / TRIGGER'}</div>`;
+  };
+  let h = `<div class="note"><b>moje · w grze</b> — Twoje zapisane zakłady (MOJE ZAKŁADY): <b>postawione</b>, które czekają na wynik, i <b>przegrane</b>, po których progresja modelu trwa — kolejny krok przed Tobą. Model zostaje tu do WIN albo BUST. Zakład zapisujesz w oknie statystyk modelu (przytrzymaj kartę albo wiersz TABELI).</div>`;
+  if (!act.length) h += `<div class="empty" style="padding:10px 4px">Teraz nic nie jest w grze. Tu trafi zakład zaraz po zapisaniu, a po przegranym kroku — model aż do WIN albo BUST.</div>`;
+  [[0, '▼ TERAZ — na następnym wierszu'], [1, '● POSTAWIONE — czekają na wynik'], [2, 'W GRZE — kolejny zakład już ustawiony'], [3, 'W GRZE — kolejny krok później']].forEach(([l, nm]) => {
+    const g = act.filter(x => lvl(x) === l).sort((a, b) => (a.d || 99) - (b.d || 99));
+    if (!g.length) return;
+    h += `<div class="sec wg wg${l}"><div class="sh"><b>${nm}</b><span class="m">${g.length}</span></div>` +
+      g.map(x => head(x) + (x.k >= 0 ? card(x.k, P[x.k], x.r, phaseOf(x.r)) : `<div class="empty">${esc(x.b.id)} — modelu nie ma teraz w puli tej appki</div>`)).join('') + '</div>';
+  });
+  if (done.length) h += `<details class="wgd"><summary>Zakończone (${done.length})</summary>` + done.slice(0, 40).map(x => {
+    const b = x.b, r = x.r;
+    const t = x.res === 'win' ? `<span class="pos">✔ WIN na moim zakładzie</span> ${bet(b)} · +${2 * b.stake} zł`
+      : x.res === 'none' ? `? model nie grał w w.${(b.row + 1).toLocaleString('pl')} (${bet(b)})`
+      : !r ? `${bet(b)} — model poza pulą`
+      : r.le === b.row && r.lt === 2 ? `<span class="neg">✖ BUST na moim zakładzie</span> ${bet(b)}`
+      : `✗ ${bet(b)} przegrany, potem ${r.lt === 1 ? '<span class="pos">WIN</span>' : '<span class="neg">BUST</span>'} w w.${(r.le + 1).toLocaleString('pl')} (bez mojego zakładu)`;
+    return `<div class="wgl"><b>${esc(b.id)}</b> · ${t}</div>`; }).join('') + '</details>';
+  return h;
+}
 function renderGra() {
   const n = codes.length;
   if (!lastEval) return `<div class="ban idle">Liczę ${P.length.toLocaleString('pl')} modeli…</div>`;
@@ -696,11 +743,13 @@ function renderGra() {
   h += lastCodes();
   h += `<div class="flt"><span>krok:</span>${KSTEPS.map(k => `<button class="chip ${KS.includes(k) ? 'on' : ''}" data-k="${k}">k${k} ${ST[k - 1]} zł · ${perK[k]}</button>`).join('')}</div>`;
   h += `<div class="flt"><span>widok:</span><button class="chip ${afterOnly ? 'on' : ''}" data-only="1">tylko GRA na następnym · ${graAll.length}</button>` +
-    `<button class="chip mine ${onlyMine ? 'on' : ''}" data-mine="1">▶ MOJE MODELE · ${my.length}</button></div>`;
+    `<button class="chip mine ${onlyMine ? 'on' : ''}" data-mine="1">▶ MOJE · ${my.length}</button></div>`;
   const shown = i => R.rules[i][0] !== null || B[i].length > 0;
   if (!onlyMine) { const allB = R.rules.length === BANDS.length && R.rules.every((_, i) => BANDS.includes(i)), one = !allB && BANDS.length === 1 ? BANDS[0] : -1;
     h += `<div class="flt"><span>cykle:</span>${R.rules.map((_, i) => `<button class="chip ${i === one ? 'on' : ''}" data-b="${i}">${bandShort(i)} · ${B[i].length}</button>`).join('')}</div>`; }
-  if (onlyMine) h += `<div class="note"><b>MOJE MODELE</b> — tylko modele, które grasz (${myOn.length} w grze${my.length > myOn.length ? `, ${my.length - myOn.length} zakończone` : ''}). Dotknij „▶ MOJE MODELE” jeszcze raz, żeby wrócić do wszystkich.</div>` +
+  if (onlyMine) h += `<div class="flt"><span>moje:</span><button class="chip ${mojeTab === 'gry' ? 'on' : ''}" data-mt="gry">gry · ${myOn.length}/${my.length}</button><button class="chip ${mojeTab === 'wg' ? 'on' : ''}" data-mt="wg">w grze · ${wgCount(out)}</button></div>`;
+  if (onlyMine && mojeTab === 'wg') return h + wgHtml(out);
+  if (onlyMine) h += `<div class="note"><b>MOJE</b> — tylko modele, które grasz (${myOn.length} w grze${my.length > myOn.length ? `, ${my.length - myOn.length} zakończone` : ''}). Dotknij „▶ MOJE” jeszcze raz, żeby wrócić do wszystkich.</div>` +
     (my.length ? '' : `<div class="empty" style="padding:10px 4px">Nie grasz jeszcze żadnego modelu. Przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`);
   else h += `<div class="note">W kryteriach: <b>${qn.toLocaleString('pl')}</b> z ${P.length.toLocaleString('pl')} modeli (min ${R.minCyc} cykli, min ${R.minBust} BUST, BUST od razu po BUST-cie max ${R.maxClose}×).
     <b>Tuż po BUST-cie: ${an}</b> — ich ostatni cykl skończył się BUST-em, a teraz trwa następny cykl. Niżej <b>tylko modele po TRIGGERZE</b> — GRA na następnym wierszu albo zakład już ustawiony za kilka wierszy — na wybranych krokach (${KS.length ? KS.map(k => 'k' + k).join(', ') : 'żaden'}); wchodzisz od tego kroku do WIN albo kroku 8. W grupach wg liczby cykli, najbliższa gra pierwsza. Dotknij karty → TABELA.</div>`;
@@ -1028,7 +1077,7 @@ function renderMoje() {
   ensureMyFromBets();
   if (!lastEval) return `<div class="ban idle">Liczę…</div>`;
   const out = lastEval.out, my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0), myOn = my.filter(x => !myResult(x.g, out[x.k]));
-  if (!my.length) return `<div class="note"><b>MOJE MODELE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA przytrzymaj kartę modelu → „▶ Gram ten model”.</div>` + betsSummary();
+  if (!my.length) return `<div class="note"><b>MOJE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA przytrzymaj kartę modelu → „▶ Gram ten model”.</div>` + betsSummary();
   if (!my.some(x => x.k === selK)) { selK = (myOn[0] || my[0]).k; needLabels(); }
   tabMine = true;
   const h = myCardsHtml(out, my, myOn, selK) + betsSummary() + `<div class="note" style="margin-top:4px">Tabela modelu <b>${mid(selK, P[selK])}</b> — dotknij innej karty wyżej, żeby zmienić model.</div>` + renderTab();
@@ -1184,7 +1233,8 @@ function render() {
       const k = +b.dataset.k; KS = KS.includes(k) ? KS.filter(x => x !== k) : [...KS, k].sort((a, b) => a - b); lsSet(LSK.ks, JSON.stringify(KS)); render();
     });
     el.querySelectorAll('[data-only]').forEach(b => b.onclick = () => { afterOnly = !afterOnly; try { localStorage.setItem(CFG.app + '_szbust_v1_gra_only', afterOnly ? '1' : '0'); } catch (e) {} render(); });
-    el.querySelectorAll('[data-mine]').forEach(b => b.onclick = () => { onlyMine = !onlyMine; try { localStorage.setItem(CFG.app + '_szbust_v1_onlymine', onlyMine ? '1' : '0'); } catch (e) {} render(); scrollTo(0, 0); });
+    el.querySelectorAll('[data-mt]').forEach(b => b.onclick = () => { mojeTab = b.dataset.mt; render(); scrollTo(0, 0); });
+    el.querySelectorAll('[data-mine]').forEach(b => b.onclick = () => { onlyMine = !onlyMine; mojeTab = 'gry'; try { localStorage.setItem(CFG.app + '_szbust_v1_onlymine', onlyMine ? '1' : '0'); } catch (e) {} render(); scrollTo(0, 0); });
     el.querySelectorAll('[data-b]').forEach(b => b.onclick = () => {
       const all = R.rules.map((_, j) => j), i = +b.dataset.b;   // jeden przedział cykli naraz; ponowne dotknięcie = wszystkie (żaden nie podświetlony)
       BANDS = BANDS.length === 1 && BANDS[0] === i ? all : [i]; lsSet(LSK.bands, JSON.stringify(BANDS)); render();

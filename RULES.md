@@ -54,3 +54,10 @@ Zapisuje reguły i ustalenia z rozmów, żeby przetrwały streszczenie (kompakcj
 - Statystyki: pasek „Ostatnie N cykli” to cykle (W krok / BUST), nie wiersze.
 - RAZEM: okno „Statystyki modelu” musi mieć białą czcionkę w każdej tabeli (TRÓJKA, 2-SLOT, MIX3 miały czarną — poprawione);
   T60 MIX3 → STATY w układzie TRÓJKI (T50Stat).
+
+## Aplikacja MOJE (repo `moje`, adres `/moje/`)
+
+- Zbiera MOJE (modele, które gram) i MOJE ZAKŁADY ze wszystkich SZUKAJ / SZUKAJ+ / BUST, T50 i T60 — czyta wspólną pamięć telefonu, nic nie kopiuje.
+- Przycisk w oknie statystyk SZUKAJ / SZUKAJ+ „⇢ Gram — dodaj do MOJE i otwórz” zastąpił dawne „Dodaj do RAZEM — zakładka SZUKAJ”.
+- Poza tym przyciskiem aplikacji źródłowych **nie zmieniamy** pod MOJE.
+- Wpis kodów w MOJE: przy każdej tabeli ostatni kod i kiedy wpisany („5 minut temu”, „2 dni temu”).

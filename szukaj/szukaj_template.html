@@ -326,7 +326,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.10.0';
+const APP_VER = '1.11.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -1286,6 +1286,23 @@ async function checkVersion() {
   } catch (e) {}
 }
 checkVersion(); document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
+</script>
+<script>
+"use strict";
+// ===== napisy na ekranie: BUST → LOST (tylko to, co widać; dane, zapisy i obliczenia bez zmian) =====
+function LOSTIFY(doc, keepNames) {   // keepNames: zostaw nazwę tabeli / modeli „BUST” z RAZEM T60 (2 = też sam napis „BUST”, np. zakładka tabeli)
+  try {
+    if (!doc || doc.__lost) return; doc.__lost = 1;
+    const RX = keepNames ? /\bBUST\b(?! 012| ·| [A-Z]\d[A-Z0-9])|\bbusty\b|\bBusty\b/g : /\bBUST\b|\bbusty\b|\bBusty\b/g;
+    const keep = v => keepNames === 2 && /^\s*BUST\s*$/.test(v);
+    const fix = n => { const pa = n.parentNode; if (pa && /^(SCRIPT|STYLE|TEXTAREA)$/.test(pa.nodeName)) return; const v = n.nodeValue; if (!v || !/BUST|usty/.test(v) || keep(v)) return; const f = v.replace(RX, m => m === 'BUST' ? 'LOST' : m === 'busty' ? 'losty' : 'Losty'); if (f !== v) n.nodeValue = f; };
+    const walk = r => { if (r.nodeType === 3) return fix(r); if (r.nodeType !== 1 || /^(SCRIPT|STYLE|TEXTAREA)$/.test(r.nodeName)) return; const w = doc.createTreeWalker(r, 4); let n; while ((n = w.nextNode())) fix(n); };
+    const root = doc.body || doc.documentElement; walk(root);
+    new doc.defaultView.MutationObserver(ms => ms.forEach(m => m.type === 'characterData' ? fix(m.target) : m.addedNodes.forEach(walk)))
+      .observe(root, { childList: true, subtree: true, characterData: true });
+  } catch (e) {}
+}
+LOSTIFY(document, false);
 </script>
 </body>
 </html>

@@ -181,7 +181,6 @@ th{color:var(--mu);font-weight:600}
 <nav>
   <button data-v="gra" class="on">GRA</button>
   <button data-v="tab">TABELA</button>
-  <button data-v="moje" id="navMine">MOJE</button>
   <button data-v="ust">SZUKAJ</button>
 </nav>
 <script id="wsrc" type="text/js-worker">
@@ -326,7 +325,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.11.0';
+const APP_VER = '1.12.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -354,7 +353,7 @@ let KS = (() => { try { const v = JSON.parse(lsGet(LSK.ks, '')); if (Array.isArr
 let afterOnly = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_gra_only') === '1'; } catch (e) { return false; } })();   // GRA: tylko GRA na następnym
 let view = 'gra', busy = false, searching = null, bandCap = {};
 let mojeTab = 'gry';   // ▶ MOJE: podzakładki „gry” (karty) i „w grze” (moje zakłady: postawione i po przegranym kroku)
-let onlyMine = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_onlymine') === '1'; } catch (e) { return false; } })();   // GRA: tylko MOJE
+let onlyMine = false;   // MOJE (gry, zakłady, LOST-y) przeniesione do aplikacji MOJE   // GRA: tylko MOJE
 let BANDS = (() => { try { const v = JSON.parse(lsGet(LSK.bands, '')); if (Array.isArray(v)) return v; } catch (e) {} return R.rules.map((_, i) => i); })();
 function foundKey() { return LSK.found + tgt; }
 function getFound() { try { const v = JSON.parse(lsGet(foundKey(), '[]')); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
@@ -391,9 +390,8 @@ function renderSheet() {
     ${r ? `<div class="spnow">Teraz: <b>krok ${r.bs + 1} · ${ST[r.bs]} zł</b> · ${ph}</div>` : ''}
     ${!r ? '' : mine
       ? `<button class="btn playing" id="spStop">${res ? (res.win ? '✔ WIN' : '✖ BUST') + ` — gra zakończona (${res.pnl >= 0 ? '+' : ''}${res.pnl} zł). Usuń z MOJE GRY` : `■ W MOJE GRY od w.${g.start + 1} (wejście k${g.s0}) — przestań śledzić`}</button>`
-      : `<button class="btn play" id="spPlay">▶ Gram ten model — dodaj do MOJE GRY (teraz krok ${r.bs + 1}, ${ST[r.bs]} zł)</button><div class="hint" style="margin-top:4px">${afterB(r) ? 'Trwa cykl po BUST-cie. ' : 'Uwaga: model nie jest teraz tuż po BUST-cie. '}Model zostanie w MOJE GRY na górze ekranu GRA do WIN albo kroku 8, niezależnie od kryteriów i filtrów.</div>`}
+      : `<button class="btn play" id="spPlay">▶ Gram ten model — dodaj do MOJE GRY (teraz krok ${r.bs + 1}, ${ST[r.bs]} zł)</button><div class="hint" style="margin-top:4px">${afterB(r) ? 'Trwa cykl po BUST-cie. ' : 'Uwaga: model nie jest teraz tuż po BUST-cie. '}Model trafi do aplikacji <b>MOJE</b> — tam go śledzisz, zapisujesz zakłady i widzisz LOST-y.</div>`}
     ${ready ? statsHtml(r) : '<div class="hint" style="margin-top:10px">Liczę statystyki…</div>'}
-    ${r ? betBox(k) : ''}
     <button class="btn more" id="spTab" style="margin-top:10px">Otwórz TABELĘ tego modelu</button><button class="btn more" id="spClose" style="margin-top:6px">✕ Zamknij</button></div>`;
   $('spX').onclick = closeStats; $('spClose').onclick = closeStats;
   $('spTab').onclick = () => { closeStats(); openTab(k); };
@@ -509,7 +507,7 @@ function flashTo(pp, win) {
   const k = ks.includes(selK) && (view !== 'gra' || !mine.length || mine.includes(selK)) ? selK : mine.length ? mine[0] : ks[0];
   flashRow = { i: pp.row, win };
   if (view === 'moje' && !mine.includes(k)) view = 'tab';
-  if (view === 'gra') view = mine.includes(k) ? 'moje' : 'tab';
+  if (view === 'gra') view = 'tab';
   if (selK !== k) { selK = k; tabN = 150; }
   tabScroll = true; hlBet = -1; liveOn = false;
   document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === view));
@@ -743,7 +741,7 @@ function renderGra() {
   h += lastCodes();
   h += `<div class="flt"><span>krok:</span>${KSTEPS.map(k => `<button class="chip ${KS.includes(k) ? 'on' : ''}" data-k="${k}">k${k} ${ST[k - 1]} zł · ${perK[k]}</button>`).join('')}</div>`;
   h += `<div class="flt"><span>widok:</span><button class="chip ${afterOnly ? 'on' : ''}" data-only="1">tylko GRA na następnym · ${graAll.length}</button>` +
-    `<button class="chip mine ${onlyMine ? 'on' : ''}" data-mine="1">▶ MOJE · ${my.length}</button></div>`;
+    `</div>`;
   const shown = i => R.rules[i][0] !== null || B[i].length > 0;
   if (!onlyMine) { const allB = R.rules.length === BANDS.length && R.rules.every((_, i) => BANDS.includes(i)), one = !allB && BANDS.length === 1 ? BANDS[0] : -1;
     h += `<div class="flt"><span>cykle:</span>${R.rules.map((_, i) => `<button class="chip ${i === one ? 'on' : ''}" data-b="${i}">${bandShort(i)} · ${B[i].length}</button>`).join('')}</div>`; }
@@ -753,7 +751,6 @@ function renderGra() {
     (my.length ? '' : `<div class="empty" style="padding:10px 4px">Nie grasz jeszcze żadnego modelu. Przytrzymaj kartę modelu → „▶ Gram ten model”.</div>`);
   else h += `<div class="note">W kryteriach: <b>${qn.toLocaleString('pl')}</b> z ${P.length.toLocaleString('pl')} modeli (min ${R.minCyc} cykli, min ${R.minBust} BUST, BUST od razu po BUST-cie max ${R.maxClose}×).
     <b>Tuż po BUST-cie: ${an}</b> — ich ostatni cykl skończył się BUST-em, a teraz trwa następny cykl. Niżej <b>tylko modele po TRIGGERZE</b> — GRA na następnym wierszu albo zakład już ustawiony za kilka wierszy — na wybranych krokach (${KS.length ? KS.map(k => 'k' + k).join(', ') : 'żaden'}); wchodzisz od tego kroku do WIN albo kroku 8. W grupach wg liczby cykli, najbliższa gra pierwsza. Dotknij karty → TABELA.</div>`;
-  if (my.length) h += myCardsHtml(out, my, myOn);
   for (const i of bandOrder()) {
     if (onlyMine) break;
     if (!BANDS.includes(i) || (!shown(i) && BANDS.length > 1)) continue;
@@ -1018,7 +1015,7 @@ function flashBet(b) {   // dotknięcie zakładu → MOJE: karta modelu na chwil
   const k = P.findIndex(m => specKey(m) === specKey(b.m));
   if (k < 0) { toast(`Model ${b.id} nie jest teraz w puli tej appki`); return; }
   // model w MOJE → ramka w MOJE; usunięty z MOJE → ramka na GRA (jeśli tam jest), inaczej TABELA modelu na wierszu zakładu
-  const mine = isMine(k), tv = mine ? 'moje' : 'gra';
+  const mine = isMine(k), tv = 'gra';
   closeStats();
   flashK = k; flashUntil = Date.now() + 2600;
   if (view !== tv) { view = tv; tabScroll = false; hlBet = -1; liveOn = false; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === tv)); }
@@ -1183,6 +1180,7 @@ function renderUst() {
 function render() {
   $('hdrN').textContent = `Nr ${codes.length.toLocaleString('pl')} · BET ${tgt}`;
   const el = $('main');
+  if (view === 'moje') view = 'gra';   // MOJE jest teraz w aplikacji MOJE
   el.innerHTML = view === 'gra' ? renderGra() : view === 'tab' ? renderTab() : view === 'moje' ? renderMoje() : renderUst();
   const hm = $('hdrModel');   // opis modelu w nagłówku (TABELA / MOJE)
   if (hm) { const m = (view === 'tab' || view === 'moje') && selK !== null && P[selK] && !(view === 'moje' && !getMy().length) ? P[selK] : null;

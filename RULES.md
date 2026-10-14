@@ -42,6 +42,8 @@ Zapisuje reguły i ustalenia z rozmów, żeby przetrwały streszczenie (kompakcj
 
 ## MOJE
 
+- **MOJE tylko w aplikacji MOJE**: w SZUKAJ, SZUKAJ+, SZUKAJ LOST i RAZEM 50/60 nie ma już zakładek MOJE / MOJE GRY / MOJE ZAKŁADY / „w grze” / „losty”. Zostaje tylko przycisk dodania modelu do MOJE (okno statystyk). Dane (listy, zakłady) bez zmian — czyta je aplikacja MOJE.
+
 - „▶ moje” na GRA: podzakładki **gry** · **busty** · **w grze** (w BUST: „▶ MOJE”: gry · w grze).
 - **gry** — modele dodane „▶ Gram ten model”, śledzone do WIN albo kroku 8.
 - **busty** — BUST-y moich modeli od dodania; **zostają po usunięciu modelu z MOJE** (✕ usuwa wpis); znikają po WIN modelu.

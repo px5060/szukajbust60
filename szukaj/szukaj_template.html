@@ -326,7 +326,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.10.0';
+const APP_VER = '1.11.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -390,8 +390,8 @@ function renderSheet() {
     <h3>Model ${mid(k, m)}</h3><div class="hs">${esc(ruleTxt(m))}</div>
     ${r ? `<div class="spnow">Teraz: <b>krok ${r.bs + 1} · ${ST[r.bs]} zł</b> · ${ph}</div>` : ''}
     ${!r ? '' : mine
-      ? `<button class="btn playing" id="spStop">${res ? (res.win ? '✔ WIN' : '✖ BUST') + ` — gra zakończona (${res.pnl >= 0 ? '+' : ''}${res.pnl} zł). Usuń z MOJE GRY` : `■ W MOJE GRY od w.${g.start + 1} (wejście k${g.s0}) — przestań śledzić`}</button>`
-      : `<button class="btn play" id="spPlay">▶ Gram ten model — dodaj do MOJE GRY (teraz krok ${r.bs + 1}, ${ST[r.bs]} zł)</button><div class="hint" style="margin-top:4px">${afterB(r) ? 'Trwa cykl po BUST-cie. ' : 'Uwaga: model nie jest teraz tuż po BUST-cie. '}Model zostanie w MOJE GRY na górze ekranu GRA do WIN albo kroku 8, niezależnie od kryteriów i filtrów.</div>`}
+      ? `<button class="btn playing" id="spStop">${`■ W MOJE GRY od w.${g.start + 1} (wejście k${g.s0}) — przestań śledzić`}${res ? ` · ostatnio ${res.win ? 'WIN' : 'BUST'} w.${res.row + 1}` : ''}</button>`
+      : `<button class="btn play" id="spPlay">▶ Gram ten model — dodaj do MOJE GRY (teraz krok ${r.bs + 1}, ${ST[r.bs]} zł)</button><div class="hint" style="margin-top:4px">${afterB(r) ? 'Trwa cykl po BUST-cie. ' : 'Uwaga: model nie jest teraz tuż po BUST-cie. '}Model zostanie w MOJE GRY na górze ekranu GRA i gra dalej po WIN (kolejne kroki do 8 — po BUST także w „busty”), niezależnie od kryteriów i filtrów.</div>`}
     ${ready ? statsHtml(r) : '<div class="hint" style="margin-top:10px">Liczę statystyki…</div>'}
     ${r ? betBox(k) : ''}
     <button class="btn more" id="spTab" style="margin-top:10px">Otwórz TABELĘ tego modelu</button><button class="btn more" id="spClose" style="margin-top:6px">✕ Zamknij</button></div>`;
@@ -464,7 +464,7 @@ function betsOnNextRow() {   // modele z GRĄ na następnym wierszu (widoczne na
   out.forEach((r, k) => {
     if (r.ph !== 2 || r.wz !== n) return;
     const mine = isMine(k);
-    if (mine) { const g = getMy().find(x => specKey(x.m) === specKey(P[k])); if (g && !myResult(g, r)) list.push({ k, bs: r.bs, mine: true, g }); return; }
+    if (mine) { const g = getMy().find(x => specKey(x.m) === specKey(P[k])); if (g) list.push({ k, bs: r.bs, mine: true, g }); return; }
     if (showGra(r)) list.push({ k, bs: r.bs, mine: false });
   });
   return list;
@@ -646,15 +646,12 @@ function playLists() {   // modele w kryteriach, które są w cyklu zaraz po BUS
   return { B, pre };
 }
 function myCardsHtml(out, my, myOn, selMine) {
-    let s = `<div class="sec mine"><div class="sh"><b>▶ MOJE GRY</b><span class="m">${myOn.length} w grze · do WIN albo kroku 8</span></div>`;
+    let s = `<div class="sec mine"><div class="sh"><b>▶ MOJE GRY</b><span class="m">${myOn.length} w grze · po WIN grają dalej</span></div>`;
     my.forEach(({ g, k }) => {
       const r = out[k], res = myResult(g, r), key = specKey(g.m);
-      const head = `<div class="myh">od w.${g.start + 1} · wejście k${g.s0} ${ST[g.s0 - 1]} zł</div>`;
+      const head = `<div class="myh">od w.${g.start + 1} · wejście k${g.s0} ${ST[g.s0 - 1]} zł${res ? ` · ostatnio ${res.win ? `✔ WIN k${res.k}` : '✖ BUST'} w.${res.row + 1}` : ''}</div>`;
       const sel = selMine === k ? ' msel' : '';
-      if (res) s += `<div class="mc ${res.win ? 'mwin' : 'mbust'}${sel}" data-mk="${k}"><div class="h"><span class="id">${mid(k, P[k])}</span><span class="stk">${res.win ? 'WIN' : 'BUST'}</span></div>${head}
-        <div class="st ${res.win ? 'pw' : 'pb'}">${res.win ? `WIN na kroku ${res.k} (${ST[res.k - 1]} zł) w w.${res.row + 1}` : `BUST na kroku 8 w w.${res.row + 1}`}<span class="s">Twój wynik od wejścia: ${res.pnl >= 0 ? '+' : ''}${res.pnl} zł</span></div>
-        <button class="btn more" data-stop="${esc(key)}">Zakończ — usuń z MOJE GRY</button></div>`;
-      else s += card(k, P[k], r, phaseOf(r)).replace('<div class="rule">', head + '<div class="rule">').replace('class="mc ', `class="mc${sel} `).replace('dotknij → TABELA ·', 'dotknij → tabela w MOJE ·') +
+      s += card(k, P[k], r, phaseOf(r)).replace('<div class="rule">', head + '<div class="rule">').replace('class="mc ', `class="mc${sel} `).replace('dotknij → TABELA ·', 'dotknij → tabela w MOJE ·') +
         `<button class="btn more" data-stop="${esc(key)}" style="margin:-2px 0 8px">Przestań śledzić ${mid(k, P[k])}</button>`;
     });
   return s + '</div>';
@@ -733,7 +730,7 @@ function renderGra() {
   let qn = 0, an = 0; const perK = {}; KSTEPS.forEach(k => perK[k] = 0);
   out.forEach((r, k) => { if (qual(r)) { qn++; if (afterB(r)) { an++; if (r.ph === 2 && perK[r.bs + 1] !== undefined && !isMine(k) && BANDS.includes(bandOf(r))) perK[r.bs + 1]++; } } });
   const my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0);
-  const myOn = my.filter(x => !myResult(x.g, out[x.k]));
+  const myOn = my;
   const graAll = (onlyMine ? [] : [].concat(...B.filter((_, i) => BANDS.includes(i))).filter(k => phaseOf(out[k]) === 'gra'))
     .concat(myOn.filter(x => phaseOf(out[x.k]) === 'gra').map(x => x.k));
   const sum = graAll.reduce((s, k) => s + ST[out[k].bs], 0);
@@ -1076,7 +1073,7 @@ document.addEventListener('click', e => {
 function renderMoje() {
   ensureMyFromBets();
   if (!lastEval) return `<div class="ban idle">Liczę…</div>`;
-  const out = lastEval.out, my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0), myOn = my.filter(x => !myResult(x.g, out[x.k]));
+  const out = lastEval.out, my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0), myOn = my;
   if (!my.length) return `<div class="note"><b>MOJE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA przytrzymaj kartę modelu → „▶ Gram ten model”.</div>` + betsSummary();
   if (!my.some(x => x.k === selK)) { selK = (myOn[0] || my[0]).k; needLabels(); }
   tabMine = true;

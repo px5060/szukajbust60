@@ -41,7 +41,7 @@ Zapisuje reguły i ustalenia z rozmów, żeby przetrwały streszczenie (kompakcj
 ## MOJE
 
 - „▶ moje” na GRA: podzakładki **gry** · **busty** · **w grze** (w BUST: „▶ MOJE”: gry · w grze).
-- **gry** — modele dodane „▶ Gram ten model”, śledzone do WIN albo kroku 8.
+- **gry** — modele dodane „▶ Gram ten model”, śledzone **stale**: po WIN grają dalej (czeka → za chwilę → GRAJ) na kolejnych krokach do 8; po BUST także w „busty” (do WIN). Nie „kończą się” na pierwszym wyniku — usuwa je tylko „Przestań śledzić”.
 - **busty** — BUST-y moich modeli od dodania; **zostają po usunięciu modelu z MOJE** (✕ usuwa wpis); znikają po WIN modelu.
 - **w grze** — zapisane zakłady (MOJE ZAKŁADY): postawione i czekające na wynik + przegrane, gdy progresja modelu trwa.
 - Dolny przycisk MOJE: żółty = za ile wierszy GRA w moich modelach, pomarańczowy = ile gra na następnym; świeci, gdy jest zakład.
@@ -60,4 +60,5 @@ Zapisuje reguły i ustalenia z rozmów, żeby przetrwały streszczenie (kompakcj
 - Zbiera MOJE (modele, które gram) i MOJE ZAKŁADY ze wszystkich SZUKAJ / SZUKAJ+ / BUST, T50 i T60 — czyta wspólną pamięć telefonu, nic nie kopiuje.
 - Przycisk w oknie statystyk SZUKAJ / SZUKAJ+ „⇢ Gram — dodaj do MOJE i otwórz” zastąpił dawne „Dodaj do RAZEM — zakładka SZUKAJ”.
 - Poza tym przyciskiem aplikacji źródłowych **nie zmieniamy** pod MOJE.
+- W aplikacji MOJE: po WIN model wraca do CZEKAJĄ / ZA CHWILĘ / GRAJ TERAZ; po BUST jest w zakładce BUST do pierwszego WIN. Modele z RAZEM 50/60 też (stan liczy RAZEM w ukrytej ramce).
 - Wpis kodów w MOJE: przy każdej tabeli ostatni kod i kiedy wpisany („5 minut temu”, „2 dni temu”).

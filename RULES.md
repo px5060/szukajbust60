@@ -5,6 +5,8 @@ Zapisuje reguły i ustalenia z rozmów, żeby przetrwały streszczenie (kompakcj
 
 ## Sposób pracy
 
+- **Na ekranie zamiast „BUST” piszemy „LOST”** (BUST-y → LOST-y, busty → losty) we wszystkich SZUKAJ, MOJE i RAZEM 50/60 — tylko napisy (funkcja `LOSTIFY`), dane / zapisy / obliczenia bez zmian. Wyjątek: tabela i modele „BUST” w RAZEM T60 (BUST 012, BUST ODM, np. B0A). Nazwa appki SZUKAJ BUST, adres i ikona bez zmian.
+
 - Rozmowa po polsku, prosto, bez żargonu. Symbole z `x` (np. `x1x`, `00x`) zostają — użytkownik je rozumie.
 - **PR scalany dopiero po słowie „scal”** od użytkownika. Nigdy samodzielnie.
 - Gałąź robocza: `ccr-70037d68-ntwxyk` (po scaleniu: odtworzyć od `origin/main`).

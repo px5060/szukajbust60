@@ -327,7 +327,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.13.0';
+const APP_VER = '1.13.1';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -617,7 +617,7 @@ const ST = [8, 8, 16, 32, 64, 128, 256, 512];
 function cardStats(r) {
   const w = r.wk || [], top = w.map((v, i) => [v, i + 1]).filter(x => x[0]).sort((a, b) => b[0] - a[0]).slice(0, 3);
   const l3 = (r.l3 || []).map(v => v ? `<i>W${v}</i>` : '<i class="b">L</i>').join('');
-  return `<span class="${r.pnl >= 0 ? 'pos' : 'neg'}" style="font-weight:800">${r.pnl >= 0 ? '+' : ''}${r.pnl} zł</span> · WIN <b>${r.nw}</b> · LOST <b>${r.nbu}</b>${l3 ? ` <span class="l3">ostatnie:${l3}</span>` : ''}` +
+  return `<span class="${r.pnl >= 0 ? 'pos' : 'neg'}" style="font-weight:800">${r.pnl >= 0 ? '+' : ''}${r.pnl} zł</span> · WIN <b>${r.nw}</b> · LOST <b>${r.nbu}/${(l => l === null ? '—' : l)(limitFor(r.nw + r.nbu))}</b>${l3 ? ` <span class="l3">ostatnie:${l3}</span>` : ''}` +
     (top.length ? `<br>WIN najczęściej: ${top.map(([v, k]) => `<b>k${k}</b> ${Math.round(100 * v / (r.nw || 1))}%`).join(' · ')}` : '');
 }
 function limitFor(cyc) { for (const [mc, mb] of R.rules) if (mc === null || cyc <= mc) return mb; return null; }

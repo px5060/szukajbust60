@@ -166,11 +166,13 @@ th{color:var(--mu);font-weight:600}
 .bsum{margin:8px 0 10px;padding:8px;border:1px solid #7030A0;border-radius:10px;background:var(--pan)}.bsum h3{margin:0 0 5px;font-size:13.5px;color:#ffb27a}.bsum table{width:100%;border-collapse:collapse;font-size:12.5px}
 .bsum th{font-size:10.5px;color:var(--mu);font-weight:600;text-align:right;padding:3px}.bsum td{padding:4px 3px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}.bsum th:first-child,.bsum td:first-child{text-align:left;white-space:normal}
 .bsum td.ks{white-space:normal;text-align:left;font-size:11.5px}.bsum tr.go{cursor:pointer}.bsum tr.go:active td{background:rgba(201,122,69,.25)}.bsum tr.s td{font-weight:800;border-top:1px solid #7030A0}.bsum .pos{color:#5fd38a;font-weight:700}.bsum .neg{color:#ff8a8a;font-weight:700}.bsum .mu{color:var(--mu);font-size:11px}
+#appbar{display:flex;gap:3px;flex-wrap:wrap;padding:3px 0;min-width:0}#appbar::-webkit-scrollbar{display:none}#appbar a,#appbar b{flex:none;font:700 11px/1 system-ui,sans-serif;border-radius:6px;padding:5px 4px;text-decoration:none;color:#e8ebf2;border:1.5px solid;background:transparent}#appbar b{color:#fff;border-color:transparent}#appbar a{transition:transform .15s}#appbar a.big{transform:scale(1.45);background:#2b3245;position:relative;z-index:5;box-shadow:0 0 0 2px #fff6}
 </style>
 </head>
 <body>
 <header>
   <div class="t"><h1>__TITLE__</h1><span class="n"><span id="hdrN"></span><span class="ver">v__VER__</span></span></div>
+  <div id="appbar"></div>
   <button class="btn inst" id="instBtn">⬇ Zainstaluj __TITLE__ jako osobną aplikację</button>
   <div class="erow">
     <input id="codeIn" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="kod, np. 010">
@@ -180,6 +182,22 @@ th{color:var(--mu);font-weight:600}
   <div id="hdrModel" class="mbar hm"></div>
   <div class="tgt" id="tgt"></div>
 </header>
+<script>
+(function () {   // pasek aplikacji: przyciski otwierające pozostałe aplikacje (ten sam adres px5060.github.io, wspólne kody)
+  const A = [['/moje/', 'MOJE', '#c97a45'], ['/t50razem/', 'R50', '#2e7d4f'], ['/all60/', 'R60', '#2e7d4f'], ['/szukaj50/', 'S50', '#2e75b6'], ['/szukaj60/', 'S60', '#2e75b6'],
+    ['/szukaj50plus/', 'S+50', '#7a3fb0'], ['/szukaj60plus/', 'S+60', '#7a3fb0'], ['/szukajbust50/', 'L50', '#8e2a2a'], ['/szukajbust60/', 'L60', '#8e2a2a']];
+  const el = document.getElementById('appbar'), here = location.pathname.replace(/index\.html$/, '');
+  if (el) el.innerHTML = [...A.filter(([u]) => here.endsWith(u)), ...A.filter(([u]) => !here.endsWith(u))].map(([u, l, c]) => here.endsWith(u) ? `<b style="background:${c}">${l}</b>` : `<a href="${u}" style="border-color:${c}">${l}</a>`).join('');
+  // 1. dotknięcie powiększa przycisk, 2. dotknięcie powiększonego otwiera aplikację (żeby nie przełączyć przez przypadek)
+  if (el) el.addEventListener('click', e => {
+    const a = e.target.closest('a'); if (!a) return;
+    if (a.classList.contains('big')) return;
+    e.preventDefault(); el.querySelectorAll('a.big').forEach(x => x.classList.remove('big')); a.classList.add('big');
+    clearTimeout(el._t); el._t = setTimeout(() => a.classList.remove('big'), 4000);
+  });
+})();
+</script>
+
 <main id="main"></main>
 <nav>
   <button data-v="gra" class="on">GRA</button>
@@ -329,7 +347,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.13.6';
+const APP_VER = '1.13.8';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -369,6 +387,19 @@ function pool() {   // pula z chmury (znaleziona na bazie do Nr seedN; szukanie 
 }
 // ---- MOJE GRY: modele, które gram — śledzone do WIN albo BUST (krok 8), niezależnie od kryteriów i filtrów ----
 const specKey = m => m.slice(0, 5).join('|');
+// skrót z MOJE: ?model=<pola modelu>&tgt=x1x&v=stat|tab → od razu ten model (statystyki albo cała tabela)
+const DL = (() => { try {
+  const q = new URLSearchParams(location.search), m = q.get('model'); if (!m) return null;
+  history.replaceState(null, '', location.pathname);
+  const tg = q.get('tgt'); if (tg && CFG.targets.includes(tg) && tg !== tgt) { tgt = tg; lsSet(LSK.tgt, tgt); }
+  return { s: specKey(m.split('|')), v: q.get('v') === 'tab' ? 'tab' : 'stat' };
+} catch (e) { return null; } })();
+function dlOpen() {
+  if (!DL || DL.done) return; DL.done = 1;
+  const k = P.findIndex(m => specKey(m) === DL.s);
+  if (k < 0) { toast('Nie znalazłem tego modelu w tej aplikacji'); return; }
+  if (DL.v === 'tab') openTab(k); else openStats(k);
+}
 function getMy() { try { const v = JSON.parse(lsGet(LSK.my + tgt, '[]')); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
 function setMy(a) { lsSet(LSK.my + tgt, JSON.stringify(a)); }
 function myIndex(g) { return P.findIndex(m => specKey(m) === specKey(g.m)); }
@@ -434,7 +465,7 @@ let selK = null, lab = null, labId = 0, labFor = '', tabN = 150, tabEv = false, 
 let tabAsc = (() => { try { return localStorage.getItem(CFG.app + '_szbust_v1_asc') !== '0'; } catch (e) { return true; } })();   // najstarsze u góry   // TABELA: wybrany model + jego etykiety
 W.onmessage = e => {
   const d = e.data;
-  if (d.type === 'eval') { if (d.id !== evalId) return; lastEval = d; busy = false; render(); if (pendingPop && codes.length === pendingPop.row + 1) { showResultPop(pendingPop); } pendingPop = null; if (statK !== null) { needLabels(); renderSheet(); } }
+  if (d.type === 'eval') { if (d.id !== evalId) return; lastEval = d; busy = false; render(); dlOpen(); if (pendingPop && codes.length === pendingPop.row + 1) { showResultPop(pendingPop); } pendingPop = null; if (statK !== null) { needLabels(); renderSheet(); } }
   if (d.type === 'betres') { if (d.id !== betResId) return; betRes = d.res; if (view === 'moje' || (view === 'gra' && onlyMine && mojeTab === 'wg')) render(); if (statK !== null) renderSheet(); return; }
   if (d.type === 'label') { if (d.id !== labId) return; lab = d; if (view === 'tab' || view === 'moje') render(); if (statK !== null) renderSheet(); }
   if (d.type === 'row') { if (d.id !== rowId) return; rowPop(d); return; }

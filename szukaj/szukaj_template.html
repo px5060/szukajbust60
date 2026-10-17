@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" data-themable>
+<script>try { if (localStorage.getItem('px_theme') === 'day') document.documentElement.dataset.theme = 'day'; } catch (e) {}</script>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -167,6 +168,7 @@ th{color:var(--mu);font-weight:600}
 .bsum th{font-size:10.5px;color:var(--mu);font-weight:600;text-align:right;padding:3px}.bsum td{padding:4px 3px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}.bsum th:first-child,.bsum td:first-child{text-align:left;white-space:normal}
 .bsum td.ks{white-space:normal;text-align:left;font-size:11.5px}.bsum tr.go{cursor:pointer}.bsum tr.go:active td{background:rgba(201,122,69,.25)}.bsum tr.s td{font-weight:800;border-top:1px solid #7030A0}.bsum .pos{color:#5fd38a;font-weight:700}.bsum .neg{color:#ff8a8a;font-weight:700}.bsum .mu{color:var(--mu);font-size:11px}
 #appbar{display:flex;gap:2px;flex-wrap:wrap;padding:3px 0;min-width:0}#appbar::-webkit-scrollbar{display:none}#appbar a,#appbar b{flex:none;font:700 10.5px/1 system-ui,sans-serif;border-radius:6px;padding:5px 3px;text-decoration:none;color:#e8ebf2;border:1.5px solid;background:transparent}#appbar b{color:#fff;border-color:transparent}#appbar a{transition:transform .15s}#appbar a.big{transform:scale(1.45);background:#2b3245;position:relative;z-index:5;box-shadow:0 0 0 2px #fff6}
+:root[data-theme=day]{--bg:#eef1f6;--pan:#ffffff;--card:#e3e7ef;--bd:#c3cad8;--tx:#161a22;--mu:#566074;--gr:#1a7f45;--rd:#c62828;--bl:#1f5fbf;--or2:#a0521a;color-scheme:light}[data-theme=day] #appbar a{color:#161a22}[data-theme=day] input,[data-theme=day] textarea,[data-theme=day] select{background:#fff;color:#161a22}[data-theme=day] .mini,[data-theme=day] .note{color:#3a4152}[data-theme=day] .hlinfo,[data-theme=day] .expl{background:#e8ecf4;border-color:#c3cad8;color:#3a4152}[data-theme=day] .last b.h,[data-theme=day] .kod .last .c,[data-theme=day] .last .c,[data-theme=day] .cyc b{background:#bfe6cc;color:#0f3d22}[data-theme=day] .kk{background:#cfd6e4}[data-theme=day] .btn.back,[data-theme=day] .btn.playing,[data-theme=day] .mbar{background:#e3e7ef;border-color:#c3cad8;color:#161a22}[data-theme=day] #appbar a.big{background:#fff}[data-theme=day] .respop.nil{background:#e3e7ef}[data-theme=day] .kod[style*="2a1418"]{background:#fdeaea!important}[data-theme=day] .rw.now,[data-theme=day] .mc.now,[data-theme=day] table.rows tr.k4 td,[data-theme=day] table.rows tr.k5 td{background:#fbe6d6}[data-theme=day] .rw.now .l2{color:#8a4a1a}[data-theme=day] .rw.bnow{background:#f6dcdc}[data-theme=day] table.rows tr.k7 td{background:#f6dcdc}[data-theme=day] .tsw.sub.zs button.on{background:#cfe0f5;color:#161a22}#appbar .thm{flex:none;border:1.5px solid #888;border-radius:6px;background:transparent;padding:2px 4px;font-size:13px;line-height:1;cursor:pointer}
 </style>
 </head>
 <body>
@@ -190,6 +192,12 @@ th{color:var(--mu);font-weight:600}
   const el = document.getElementById('appbar'), here = location.pathname.replace(/index\.html$/, '');
   if (el) el.innerHTML = [...A.filter(([u]) => here.endsWith(u)), ...A.filter(([u]) => !here.endsWith(u))].map(([u, l, c]) => here.endsWith(u) ? `<b style="background:${c}">${l}</b>` : `<a href="${u}" style="border-color:${c}">${l}</a>`).join('');
   // 1. dotknięcie powiększa przycisk, 2. dotknięcie powiększonego otwiera aplikację (żeby nie przełączyć przez przypadek)
+  // dzień / noc — wspólne ustawienie MOJE i SZUKAJ (pamiętane w telefonie)
+  if (el && document.documentElement.hasAttribute('data-themable')) {
+    const tb = document.createElement('button'), root = document.documentElement, upd = () => { tb.textContent = root.dataset.theme === 'day' ? '🌙' : '☀️'; tb.title = root.dataset.theme === 'day' ? 'tryb nocny' : 'tryb dzienny'; };
+    tb.className = 'thm'; upd(); el.appendChild(tb);
+    tb.onclick = () => { const d = root.dataset.theme === 'day' ? 'night' : 'day'; if (d === 'day') root.dataset.theme = 'day'; else delete root.dataset.theme; try { localStorage.setItem('px_theme', d); } catch (e) {} upd(); };
+  }
   if (el) el.addEventListener('click', e => {
     const a = e.target.closest('a'); if (!a) return;
     if (a.classList.contains('big')) return;
@@ -348,7 +356,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.13.9';
+const APP_VER = '1.14.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };

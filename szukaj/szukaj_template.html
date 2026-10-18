@@ -58,6 +58,7 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 .mc.msel{box-shadow:0 0 0 2px var(--or) inset}
 .mc.mwin{border-left-color:#5fd38a}.mc.mbust{border-left-color:#ff6666}
 .st.pw{background:#C6EFCE;color:#006100}.st.pb{background:#FF6666;color:#fff}
+.bbox{border:1px solid #8a7a20;border-radius:12px;padding:8px 10px;margin-top:10px}.bbox h4{margin:0;font-size:14px}.bbox h4 .n{font-weight:500;color:var(--mu);font-size:12px}.bbox .bh{color:#d08a4a;font-weight:700;font-size:14px;margin-top:8px}.bbox .stats{margin-top:4px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:13px;margin-top:8px}
 .stats .k{color:var(--mu)}.stats .v{font-weight:700;text-align:right}.stats .v .n{font-weight:500;color:var(--mu);font-size:12px;display:block}.stats b.bad{color:var(--rd)}.stats b.ok{color:var(--gr)}
 .seq{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}.seq i{font-style:normal;font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 5px;background:#C6EFCE;color:#006100}.seq i.b{background:#FF6666;color:#fff}
@@ -356,7 +357,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.15.3';
+const APP_VER = '1.16.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -1063,11 +1064,7 @@ function statsHtml(r) {
   const O = ocStats(S), oc = o => o ? `<b class="${o.score >= 7 ? 'ok' : o.score >= 5 ? '' : 'bad'}">${o.v} · ${o.score}/9 pkt</b>` : '<b>—</b>';
   const bk = (o, w) => o ? `<b>${OC.pct(o.first)}</b><span class="n">${o.ser} serii · <b class="${o.over ? 'bad' : 'ok'}">przekroczono k${o.lim}: ${o.over} ${o.over === 1 ? 'raz' : 'razy'}</b> · max k${o.maxk}</span>` : '<b>—</b>';
   return `<div class="stats">
-    ${row('ocena modelu (pkt z 9, jak w RAZEM)', oc(O.m))}
-    ${row('BANK +3: zamknięte w k1–3', bk(O.b3, 3))}
-    ${row('ocena BANK +3 (pkt z 9)', oc(O.b3))}
-    ${row('BANK +5: zamknięte w k1–5', bk(O.b5, 5))}
-    ${row('ocena BANK +5 (pkt z 9)', oc(O.b5))}
+    ${row('ocena modelu – prosta progresja do k8 (pkt z 9)', oc(O.m))}
     ${row('cykle (gry do WIN / BUST)', `<b>${S.cyc}</b>`)}
     ${row('zakłady (wszystkie kroki)', `<b>${S.bets}</b>`)}
     ${row('WIN', `<b class="ok">${S.w}</b>`)}
@@ -1082,7 +1079,11 @@ function statsHtml(r) {
     ${row('WIN na krokach k1…k8', `<b>${S.wk.slice(1).join(' · ')}</b>`)}
     ${row('bilans modelu (K8 od k1)', `<b class="${r && r.pnl >= 0 ? 'ok' : 'bad'}">${r ? (r.pnl >= 0 ? '+' : '') + r.pnl + ' zł' : ''}</b>`)}
   </div>${r ? checkTxt(r) : ''}<div class="hint" style="margin-top:6px">Ostatnie ${S.last.length} cykli (najnowszy z prawej):</div>
-  <div class="seq">${S.last.map(e => e[0] === 1 ? `<i>W${e[2]}</i>` : '<i class="b">BUST</i>').join('')}</div>`;
+  <div class="seq">${S.last.map(e => e[0] === 1 ? `<i>W${e[2]}</i>` : '<i class="b">BUST</i>').join('')}</div>
+  <div class="bbox"><h4>BANK +3 / +5 <span class="n">(stawki 8 · 8 · 16 · 32 · 64 · 128 · 256 · 512 zł, dalej ×2)</span></h4>${[[3, O.b3], [5, O.b5]].map(([w, o]) => `<div class="bh">BANK +${w}</div><div class="stats">
+    ${row(`zamknięte w k1–${w}`, bk(o, w))}
+    ${row(`ocena BANK +${w} (pkt z 9)`, oc(o))}
+  </div>`).join('')}</div>`;
 }
 let tabMine = false;   // TABELA wewnątrz zakładki MOJE (bez listy wyboru — wybór kartą)
 function openMine(k) { selK = k; tabN = 150; tabScroll = true; hlBet = -1; liveOn = false; view = 'moje'; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'moje')); scrollTo(0, 0); render(); }

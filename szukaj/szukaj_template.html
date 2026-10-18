@@ -59,6 +59,7 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 .mc.mwin{border-left-color:#5fd38a}.mc.mbust{border-left-color:#ff6666}
 .st.pw{background:#C6EFCE;color:#006100}.st.pb{background:#FF6666;color:#fff}
 .bbox{border:1px solid #8a7a20;border-radius:12px;padding:8px 10px;margin-top:10px}.bbox h4{margin:0;font-size:14px}.bbox h4 .n{font-weight:500;color:var(--mu);font-size:12px}.bbox .bh{color:#d08a4a;font-weight:700;font-size:14px;margin-top:8px}.bbox .stats{margin-top:4px}
+.ocb{font-size:11px;font-weight:800;padding:1px 6px;border-radius:8px;background:var(--mu);color:#fff;white-space:nowrap}.ocb.g{background:#1f8a4c}.ocb.o{background:#8a7a20}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:13px;margin-top:8px}
 .stats .k{color:var(--mu)}.stats .v{font-weight:700;text-align:right}.stats .v .n{font-weight:500;color:var(--mu);font-size:12px;display:block}.stats b.bad{color:var(--rd)}.stats b.ok{color:var(--gr)}
 .seq{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}.seq i{font-style:normal;font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 5px;background:#C6EFCE;color:#006100}.seq i.b{background:#FF6666;color:#fff}
@@ -333,6 +334,61 @@ function search(d) {
   }
   return found;
 }
+// ===== OCENA (pkt z 9) — liczona w telefonie, jak w RAZEM: bootstrap i permutacja (5000×), 5 okresów, LOST przy K7 / K8, ostatnie 40% =====
+const OC = (() => {
+  const MST = [8, 8, 16, 32, 64, 128, 256, 512], ODDS = 3;
+  const mk = S => { const st = [0], cu = [0]; for (let k = 1; k <= 12; k++) { st.push(S(k)); cu.push(cu[k - 1] + S(k)); } return { win: st.map((v, k) => k ? Math.trunc(v * ODDS) - cu[k] : 0), cu }; };
+  const PM = mk(i => MST[i - 1]), PB = mk(k => k <= 8 ? MST[k - 1] : 512 * 2 ** (k - 8));   // stawki banku: jak model, dalej ×2
+  function prog(o, Kl, T, n) {   // o = kolejne zakłady (1 = WIN) · progresja do Kl, przegrany Kl = LOST
+    let bs = 0, W = 0, B = 0, p = 0; const L = n === undefined ? o.length : n, wn = T.win, lo = T.cu[Kl];
+    for (let j = 0; j < L; j++) { if (o[j]) { p += wn[bs + 1]; W++; bs = 0; } else if (++bs === Kl) { p -= lo; B++; bs = 0; } }
+    return [W, B, p];
+  }
+  const med = a => { const s = Float64Array.from(a).sort(), L = s.length; return L % 2 ? s[(L - 1) / 2] : (s[L / 2 - 1] + s[L / 2]) / 2; };
+  function boot(o, Kl, T) {   // rng32 (seed 42) wpisany w pętle — te same liczby co rng(42)
+    const n = o.length, IT = 5000, bb = new Float64Array(IT), pb = new Float64Array(IT), s = new Uint8Array(n), a = new Uint8Array(n);
+    const wn = T.win, lo = T.cu[Kl]; let neg = 0, st = 42, t;
+    for (let it = 0; it < IT; it++) {
+      for (let j = 0; j < n; j++) { st = (st + 0x6D2B79F5) >>> 0; t = Math.imul(st ^ (st >>> 15), st | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); s[j] = o[Math.floor(((t ^ (t >>> 14)) >>> 0) / 4294967296 * n)]; }
+      let bs = 0, v = 0; for (let j = 0; j < n; j++) { if (s[j]) { v += wn[bs + 1]; bs = 0; } else if (++bs === Kl) { v -= lo; bs = 0; } } bb[it] = v; if (v <= 0) neg++;
+    }
+    for (let it = 0; it < IT; it++) {
+      a.set(o);
+      for (let j = n - 1; j > 0; j--) { st = (st + 0x6D2B79F5) >>> 0; t = Math.imul(st ^ (st >>> 15), st | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); const q = Math.floor(((t ^ (t >>> 14)) >>> 0) / 4294967296 * (j + 1)), x = a[j]; a[j] = a[q]; a[q] = x; }
+      let bs = 0, B = 0; for (let j = 0; j < n; j++) { if (a[j]) bs = 0; else if (++bs === Kl) { B++; bs = 0; } } pb[it] = B;
+    }
+    return { bootMed: med(bb), bootP: neg / IT, permMed: med(pb) };
+  }
+  function periods(o, b, N, Kl, T) {
+    const per = []; for (let s = 0; s < 5; s++) { const lo = Math.floor(s * N / 5), hi = Math.floor((s + 1) * N / 5); per.push(prog(o.filter((_, j) => b[j] >= lo && b[j] < hi), Kl, T)[2]); }
+    return per.filter(p => p > 0).length;
+  }
+  const verdict = s => s >= 7 ? 'GRAĆ' : s >= 5 ? 'OBSERWUJ' : 'ODRZUĆ';
+  // model: cykle [krok WIN 1–8 albo 9 = LOST, wiersz rozliczenia]
+  function model(cyc, N) {
+    const o = [], b = []; cyc.forEach(([K, er]) => { const n = Math.min(K, 8); for (let k = 1; k <= n; k++) { o.push(K <= 8 && k === K ? 1 : 0); b.push(er); } });
+    if (o.length < 20) return null;
+    const okresy = periods(o, b, N, 8, PM), cut = Math.trunc(N * 0.6), [, Bo, Po] = prog(o.filter((_, j) => b[j] >= cut), 8, PM);
+    const k7 = prog(o, 7, PM)[1], B = prog(o, 8, PM)[1], bt = boot(o, 8, PM);
+    const pts = { 'boot med > 0': bt.bootMed > 0 ? 2 : 0, 'P(straty) < 0,35': bt.bootP < 0.35 ? 1 : 0, '5 okresów': okresy === 5 ? 2 : okresy === 4 ? 1 : 0,
+      'LOST przy K7': k7 <= 3 ? 2 : k7 <= 5 ? 1 : 0, '40%: 0 LOST, +': Bo === 0 && Po > 0 ? 1 : 0, '0 LOST K8': B === 0 ? 1 : 0 };
+    const score = Object.values(pts).reduce((a, v) => a + v, 0);
+    return { score, v: verdict(score), pts, okresy, k7, B, ...bt };
+  }
+  // bank +w: kolejne cykle modelu (krok WIN albo 9+ = LOST) → serie banku; ocena przy limicie k12 (seria dłuższa = strata całej serii)
+  function bank(cyc, N, w) {
+    const o = [], b = [], ser = []; let carry = 0;
+    cyc.forEach(([K, er]) => { const n = Math.min(K, w); for (let s = 1; s <= n; s++) { o.push(s === K ? 1 : 0); b.push(er); } if (K <= w) { ser.push(carry + K); carry = 0; } else carry += w; });
+    if (ser.length < 10) return null;
+    const lim = w === 3 ? 9 : 10, over = ser.filter(k => k > lim).length + (carry > lim ? 1 : 0), first = ser.filter(k => k <= w).length / ser.length, maxk = Math.max(...ser, carry), okresy = periods(o, b, N, 12, PB), bt = boot(o, 12, PB);
+    const pts = { 'boot med > 0': bt.bootMed > 0 ? 2 : 0, 'P(straty) < 0,35': bt.bootP < 0.35 ? 1 : 0, '5 okresów': okresy === 5 ? 2 : okresy === 4 ? 1 : 0,
+      [`k1–${w} ≥ 80%`]: first >= 0.8 ? 2 : first >= 0.7 ? 1 : 0, 'max krok ≤ k9': maxk <= 9 ? 2 : maxk <= 12 ? 1 : 0 };
+    const score = Object.values(pts).reduce((a, v) => a + v, 0);
+    return { score, v: verdict(score), pts, first, maxk, lim, over, ser: ser.length, okresy, ...bt };
+  }
+  const pct = v => Math.round(v * 1000) / 10 + '%';
+  return { model, bank, pct };
+})();
 onmessage = e => {
   const d = e.data;
   if (d.type === 'data') { setData(d); return; }
@@ -350,6 +406,10 @@ onmessage = e => {
     postMessage({ type: 'betres', id: d.id, res });
   }
   if (d.type === 'search') { const f = search(d); postMessage({ type: 'search', found: f }); }
+  if (d.type === 'oc') {   // ocena modelu i banków +3 / +5 (filtr „ocena:” na GRA)
+    const L = labels(d.m, d.R), c = []; for (let i = 0; i < N; i++) { if (L.K[i] === 6) c.push([L.A[i], i]); else if (L.K[i] === 8) c.push([9, i]); }
+    const sc = o => o ? o.score : -1; postMessage({ type: 'oc', key: d.key, n: d.n, m: sc(OC.model(c, N)), b3: sc(OC.bank(c, N, 3)), b5: sc(OC.bank(c, N, 5)) });
+  }
 };
 </script>
 <script>
@@ -357,7 +417,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.16.0';
+const APP_VER = '1.17.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -468,7 +528,7 @@ function ruleTxt(m) {
 function mid(k, m) { return (k < POOLS[tgt].pool.length ? 'P' : 'N') + (k < POOLS[tgt].pool.length ? k + 1 : k - POOLS[tgt].pool.length + 1); }
 
 // ---- worker ----
-const W = new Worker(URL.createObjectURL(new Blob([$('wsrc').textContent], { type: 'text/javascript' })));
+const WURL = URL.createObjectURL(new Blob([$('wsrc').textContent], { type: 'text/javascript' })), W = new Worker(WURL);
 let lastEval = null, evalId = 0, P = [];
 let focusRow = null;   // MOJE ZAKŁADY: wiersz zakładu do pokazania w TABELI
 let selK = null, lab = null, labId = 0, labFor = '', tabN = 150, tabEv = false, tabScroll = true, hlBet = -1, liveOn = false;   // hlBet = podświetlony dawny zakład (wiersz); liveOn = ramki stanu TERAZ (domyślnie schowane)
@@ -493,6 +553,7 @@ function recompute() {
   const pos = TPOS[tgt];
   W.postMessage({ type: 'data', AL, X: codes.map(c => AL.indexOf(c)), Y: AL.map(c => c[pos] === '1' ? 1 : 0) });
   W.postMessage({ type: 'eval', id: evalId, pool: P, R, seedN: SEED_N });
+  ocReset();
   render();
 }
 
@@ -650,7 +711,7 @@ function card(k, m, r, kind) {
   const after = r.sinceB === 0 ? `<div class="aft">BUST w w.${r.lbr + 1} (${n - 1 - r.lbr} ${wW(n - 1 - r.lbr)} temu) → teraz cykl po BUST-cie, krok ${step}/8</div>`
     : r.sinceB > 0 ? `<div class="aft dim">ostatni BUST ${r.sinceB} ${cyW(r.sinceB)} temu (w.${r.lbr + 1})</div>` : '';
   const every = r.nbu ? Math.round(cyc / r.nbu) : 0;
-  return `<div class="mc k${Math.min(step, 7)}${isTop(r) ? ' ktop' : ''}${r.sinceB === 0 ? ' abust' : ''}" data-mk="${k}"><div class="h"><span class="id">${mid(k, m)}${isTop(r) ? ` <span class="top">★ ${topCyc()}+ cykli</span>` : ''}</span><span class="stk">krok ${step} · ${stake} zł</span></div>
+  return `<div class="mc k${Math.min(step, 7)}${isTop(r) ? ' ktop' : ''}${r.sinceB === 0 ? ' abust' : ''}" data-mk="${k}"><div class="h"><span class="id">${mid(k, m)}${isTop(r) ? ` <span class="top">★ ${topCyc()}+ cykli</span>` : ''}${ocTag(k)}</span><span class="stk">krok ${step} · ${stake} zł</span></div>
     <div class="rule">${cardStats(r)}</div>${after}${st}
     <div class="hist"><span>WIN <b>${r.nw}</b></span><span>BUST <b>${r.nbu}</b>/${lim === null ? '—' : lim}${every ? ` (co ~${every})` : ''}</span><span>BUST po BUST-cie <b class="${r.pb ? 'neg' : 'pos'}">${r.pb}</b></span><span>po BUST-cie WIN <b>${r.pw}</b></span><span class="${r.pnl >= 0 ? 'pos' : 'neg'}">${r.pnl >= 0 ? '+' : ''}${r.pnl} zł</span></div>
     ${checkTxt(r)}<div class="tapt">dotknij → TABELA · przytrzymaj → STATYSTYKI i „Gram ten model”</div></div>`;
@@ -779,7 +840,7 @@ function wgHtml(out) {
 function renderGra() {
   const n = codes.length;
   if (!lastEval) return `<div class="ban idle">Liczę ${P.length.toLocaleString('pl')} modeli…</div>`;
-  const out = lastEval.out, { B } = playLists();
+  const out = lastEval.out, { B } = playLists(); ocFilter(B);
   let qn = 0, an = 0; const perK = {}; KSTEPS.forEach(k => perK[k] = 0);
   out.forEach((r, k) => { if (qual(r)) { qn++; if (afterB(r)) { an++; if (r.ph === 2 && perK[r.bs + 1] !== undefined && !isMine(k) && BANDS.includes(bandOf(r))) perK[r.bs + 1]++; } } });
   const my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0);
@@ -797,6 +858,7 @@ function renderGra() {
   const shown = i => R.rules[i][0] !== null || B[i].length > 0;
   if (!onlyMine) { const allB = R.rules.length === BANDS.length && R.rules.every((_, i) => BANDS.includes(i)), one = !allB && BANDS.length === 1 ? BANDS[0] : -1;
     h += `<div class="flt"><span>cykle:</span>${R.rules.map((_, i) => `<button class="chip ${i === one ? 'on' : ''}" data-b="${i}">${bandShort(i)} · ${B[i].length}</button>`).join('')}</div>`; }
+  if (!onlyMine) h += ocRowHtml();
   if (onlyMine) h += `<div class="flt"><span>moje:</span><button class="chip ${mojeTab === 'gry' ? 'on' : ''}" data-mt="gry">gry · ${myOn.length}/${my.length}</button><button class="chip ${mojeTab === 'wg' ? 'on' : ''}" data-mt="wg">w grze · ${wgCount(out)}</button></div>`;
   if (onlyMine && mojeTab === 'wg') return h + wgHtml(out);
   if (onlyMine) h += `<div class="note"><b>MOJE</b> — tylko modele, które grasz (${myOn.length} w grze${my.length > myOn.length ? `, ${my.length - myOn.length} zakończone` : ''}). Dotknij „▶ MOJE” jeszcze raz, żeby wrócić do wszystkich.</div>` +
@@ -1003,32 +1065,39 @@ function modelStats() {   // z etykiet wybranego modelu (całe dzieje)
 // ===== OCENA (pkt z 9) — liczona w telefonie, jak w RAZEM: bootstrap i permutacja (5000×), 5 okresów, LOST przy K7 / K8, ostatnie 40% =====
 const OC = (() => {
   const MST = [8, 8, 16, 32, 64, 128, 256, 512], ODDS = 3;
-  const BST = k => k <= 8 ? MST[k - 1] : 512 * 2 ** (k - 8);   // stawki banku: jak model, dalej ×2
-  const cum = (S, k) => { let s = 0; for (let i = 1; i <= k; i++) s += S(i); return s; };
-  function prog(o, Kl, S) {   // o = kolejne zakłady (true = WIN) · progresja do Kl, przegrany Kl = LOST
-    let bs = 0, W = 0, B = 0, p = 0;
-    for (const x of o) { if (x) { p += Math.trunc(S(bs + 1) * ODDS) - cum(S, bs + 1); W++; bs = 0; } else { bs++; if (bs === Kl) { p -= cum(S, Kl); B++; bs = 0; } } }
+  const mk = S => { const st = [0], cu = [0]; for (let k = 1; k <= 12; k++) { st.push(S(k)); cu.push(cu[k - 1] + S(k)); } return { win: st.map((v, k) => k ? Math.trunc(v * ODDS) - cu[k] : 0), cu }; };
+  const PM = mk(i => MST[i - 1]), PB = mk(k => k <= 8 ? MST[k - 1] : 512 * 2 ** (k - 8));   // stawki banku: jak model, dalej ×2
+  function prog(o, Kl, T, n) {   // o = kolejne zakłady (1 = WIN) · progresja do Kl, przegrany Kl = LOST
+    let bs = 0, W = 0, B = 0, p = 0; const L = n === undefined ? o.length : n, wn = T.win, lo = T.cu[Kl];
+    for (let j = 0; j < L; j++) { if (o[j]) { p += wn[bs + 1]; W++; bs = 0; } else if (++bs === Kl) { p -= lo; B++; bs = 0; } }
     return [W, B, p];
   }
-  function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-  const med = a => { const s = a.slice().sort((x, y) => x - y), L = s.length; return L % 2 ? s[(L - 1) / 2] : (s[L / 2 - 1] + s[L / 2]) / 2; };
-  function boot(o, Kl, S) {
-    const rnd = rng(42), n = o.length, IT = 5000, bb = [], pb = [];
-    for (let it = 0; it < IT; it++) { const s = new Array(n); for (let j = 0; j < n; j++) s[j] = o[Math.floor(rnd() * n)]; bb.push(prog(s, Kl, S)[2]); }
-    for (let it = 0; it < IT; it++) { const a = o.slice(); for (let j = n - 1; j > 0; j--) { const q = Math.floor(rnd() * (j + 1)), t = a[j]; a[j] = a[q]; a[q] = t; } pb.push(prog(a, Kl, S)[1]); }
-    return { bootMed: med(bb), bootP: bb.filter(v => v <= 0).length / IT, permMed: med(pb) };
+  const med = a => { const s = Float64Array.from(a).sort(), L = s.length; return L % 2 ? s[(L - 1) / 2] : (s[L / 2 - 1] + s[L / 2]) / 2; };
+  function boot(o, Kl, T) {   // rng32 (seed 42) wpisany w pętle — te same liczby co rng(42)
+    const n = o.length, IT = 5000, bb = new Float64Array(IT), pb = new Float64Array(IT), s = new Uint8Array(n), a = new Uint8Array(n);
+    const wn = T.win, lo = T.cu[Kl]; let neg = 0, st = 42, t;
+    for (let it = 0; it < IT; it++) {
+      for (let j = 0; j < n; j++) { st = (st + 0x6D2B79F5) >>> 0; t = Math.imul(st ^ (st >>> 15), st | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); s[j] = o[Math.floor(((t ^ (t >>> 14)) >>> 0) / 4294967296 * n)]; }
+      let bs = 0, v = 0; for (let j = 0; j < n; j++) { if (s[j]) { v += wn[bs + 1]; bs = 0; } else if (++bs === Kl) { v -= lo; bs = 0; } } bb[it] = v; if (v <= 0) neg++;
+    }
+    for (let it = 0; it < IT; it++) {
+      a.set(o);
+      for (let j = n - 1; j > 0; j--) { st = (st + 0x6D2B79F5) >>> 0; t = Math.imul(st ^ (st >>> 15), st | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); const q = Math.floor(((t ^ (t >>> 14)) >>> 0) / 4294967296 * (j + 1)), x = a[j]; a[j] = a[q]; a[q] = x; }
+      let bs = 0, B = 0; for (let j = 0; j < n; j++) { if (a[j]) bs = 0; else if (++bs === Kl) { B++; bs = 0; } } pb[it] = B;
+    }
+    return { bootMed: med(bb), bootP: neg / IT, permMed: med(pb) };
   }
-  function periods(o, b, N, Kl, S) {
-    const per = []; for (let s = 0; s < 5; s++) { const lo = Math.floor(s * N / 5), hi = Math.floor((s + 1) * N / 5); per.push(prog(o.filter((_, j) => b[j] >= lo && b[j] < hi), Kl, S)[2]); }
+  function periods(o, b, N, Kl, T) {
+    const per = []; for (let s = 0; s < 5; s++) { const lo = Math.floor(s * N / 5), hi = Math.floor((s + 1) * N / 5); per.push(prog(o.filter((_, j) => b[j] >= lo && b[j] < hi), Kl, T)[2]); }
     return per.filter(p => p > 0).length;
   }
   const verdict = s => s >= 7 ? 'GRAĆ' : s >= 5 ? 'OBSERWUJ' : 'ODRZUĆ';
   // model: cykle [krok WIN 1–8 albo 9 = LOST, wiersz rozliczenia]
   function model(cyc, N) {
-    const o = [], b = []; cyc.forEach(([K, er]) => { const n = Math.min(K, 8); for (let k = 1; k <= n; k++) { o.push(K <= 8 && k === K); b.push(er); } });
+    const o = [], b = []; cyc.forEach(([K, er]) => { const n = Math.min(K, 8); for (let k = 1; k <= n; k++) { o.push(K <= 8 && k === K ? 1 : 0); b.push(er); } });
     if (o.length < 20) return null;
-    const okresy = periods(o, b, N, 8, i => MST[i - 1]), cut = Math.trunc(N * 0.6), [, Bo, Po] = prog(o.filter((_, j) => b[j] >= cut), 8, i => MST[i - 1]);
-    const k7 = prog(o, 7, i => MST[i - 1])[1], B = prog(o, 8, i => MST[i - 1])[1], bt = boot(o, 8, i => MST[i - 1]);
+    const okresy = periods(o, b, N, 8, PM), cut = Math.trunc(N * 0.6), [, Bo, Po] = prog(o.filter((_, j) => b[j] >= cut), 8, PM);
+    const k7 = prog(o, 7, PM)[1], B = prog(o, 8, PM)[1], bt = boot(o, 8, PM);
     const pts = { 'boot med > 0': bt.bootMed > 0 ? 2 : 0, 'P(straty) < 0,35': bt.bootP < 0.35 ? 1 : 0, '5 okresów': okresy === 5 ? 2 : okresy === 4 ? 1 : 0,
       'LOST przy K7': k7 <= 3 ? 2 : k7 <= 5 ? 1 : 0, '40%: 0 LOST, +': Bo === 0 && Po > 0 ? 1 : 0, '0 LOST K8': B === 0 ? 1 : 0 };
     const score = Object.values(pts).reduce((a, v) => a + v, 0);
@@ -1037,24 +1106,62 @@ const OC = (() => {
   // bank +w: kolejne cykle modelu (krok WIN albo 9+ = LOST) → serie banku; ocena przy limicie k12 (seria dłuższa = strata całej serii)
   function bank(cyc, N, w) {
     const o = [], b = [], ser = []; let carry = 0;
-    cyc.forEach(([K, er]) => { const n = Math.min(K, w); for (let s = 1; s <= n; s++) { o.push(s === K); b.push(er); } if (K <= w) { ser.push(carry + K); carry = 0; } else carry += w; });
+    cyc.forEach(([K, er]) => { const n = Math.min(K, w); for (let s = 1; s <= n; s++) { o.push(s === K ? 1 : 0); b.push(er); } if (K <= w) { ser.push(carry + K); carry = 0; } else carry += w; });
     if (ser.length < 10) return null;
-    const lim = w === 3 ? 9 : 10, over = ser.filter(k => k > lim).length + (carry > lim ? 1 : 0), first = ser.filter(k => k <= w).length / ser.length, maxk = Math.max(...ser, carry), okresy = periods(o, b, N, 12, BST), bt = boot(o, 12, BST);
+    const lim = w === 3 ? 9 : 10, over = ser.filter(k => k > lim).length + (carry > lim ? 1 : 0), first = ser.filter(k => k <= w).length / ser.length, maxk = Math.max(...ser, carry), okresy = periods(o, b, N, 12, PB), bt = boot(o, 12, PB);
     const pts = { 'boot med > 0': bt.bootMed > 0 ? 2 : 0, 'P(straty) < 0,35': bt.bootP < 0.35 ? 1 : 0, '5 okresów': okresy === 5 ? 2 : okresy === 4 ? 1 : 0,
       [`k1–${w} ≥ 80%`]: first >= 0.8 ? 2 : first >= 0.7 ? 1 : 0, 'max krok ≤ k9': maxk <= 9 ? 2 : maxk <= 12 ? 1 : 0 };
     const score = Object.values(pts).reduce((a, v) => a + v, 0);
     return { score, v: verdict(score), pts, first, maxk, lim, over, ser: ser.length, okresy, ...bt };
   }
   const pct = v => Math.round(v * 1000) / 10 + '%';
-  const det = s => Object.entries(s.pts).map(([k, v]) => `${k} ${v}`).join(' · ') + ` · boot P(≤0) ${s.bootP.toFixed(2)}`;
-  return { model, bank, pct, det };
+  return { model, bank, pct };
 })();
 const _oc = new Map();   // ocena: raz na model, cel i liczbę kodów (bootstrap 5000×)
 function ocStats(S) {
+
   const k = tgt + '|' + selK + '|' + codes.length;
   if (!_oc.has(k)) { const c = S.ends.map(e => [e[0] === 1 ? e[2] : 9, e[1]]), n = codes.length; _oc.set(k, { m: OC.model(c, n), b3: OC.bank(c, n, 3), b5: OC.bank(c, n, 5) }); }
   return _oc.get(k);
 }
+// ===== filtr „ocena:” na GRA — modele z listy (krok + cykle) z oceną GRAĆ / OBSERWUJ (pkt z 9 jak w statystykach); liczone w 2 osobnych wątkach, wyniki zapamiętane w telefonie =====
+let OCF = (() => { try { const v = JSON.parse(localStorage.getItem(CFG.app + '_szukajp_v1_ocf')); if (v && typeof v.src === 'string' && Array.isArray(v.lv)) return v; } catch (e) {} return { src: '', lv: ['GRAĆ', 'OBSERWUJ'] }; })();
+const OCK = 'oc_v1' + location.pathname;
+const OCC = (() => { try { return new Map(JSON.parse(localStorage.getItem(OCK) || '[]')); } catch (e) { return new Map(); } })();   // tgt|model → [liczba kodów, model, BANK +3, BANK +5]
+let OCW = null, ocQ = [], ocBusy = [false, false], ocFly = new Set(), ocInfo = null, ocSaveT = 0, ocRT = 0;
+const ocKey = k => tgt + '|' + specKey(P[k]);
+const ocVerd = s => s >= 7 ? 'GRAĆ' : s >= 5 ? 'OBSERWUJ' : 'ODRZUĆ';
+function ocSave() { try { localStorage.setItem(CFG.app + '_szukajp_v1_ocf', JSON.stringify(OCF)); } catch (e) {} }
+function ocData() { const pos = TPOS[tgt]; return { type: 'data', AL, X: codes.map(c => AL.indexOf(c)), Y: AL.map(c => c[pos] === '1' ? 1 : 0) }; }
+function ocReset() { ocQ = []; if (OCW) { const d = ocData(); OCW.forEach(w => w.postMessage(d)); } }
+function ocPump() {
+  if (!OCW) { OCW = [0, 1].map(i => { const w = new Worker(WURL); w.onmessage = e => ocDone(i, e.data); return w; }); const d = ocData(); OCW.forEach(w => w.postMessage(d)); }
+  OCW.forEach((w, i) => { if (ocBusy[i] || !ocQ.length) return; const k = ocQ.shift(), key = ocKey(k); ocBusy[i] = true; ocFly.add(key); w.postMessage({ type: 'oc', key, n: codes.length, m: P[k], R }); });
+}
+function ocDone(i, d) {
+  ocBusy[i] = false; if (d.type !== 'oc') return;
+  ocFly.delete(d.key); OCC.set(d.key, [d.n, d.m, d.b3, d.b5]);
+  clearTimeout(ocSaveT); ocSaveT = setTimeout(() => { try { localStorage.setItem(OCK, JSON.stringify([...OCC].slice(-4000))); } catch (e) {} }, 1500);
+  ocPump();
+  if (view === 'gra' && OCF.src) { clearTimeout(ocRT); ocRT = setTimeout(render, ocQ.length || ocBusy.some(x => x) ? 700 : 0); }
+}
+function ocFilter(B) {   // zostawia w grupach tylko modele z wybraną oceną, od najwyższej punktacji (niepoliczone jeszcze — w kolejce)
+  ocInfo = null; if (!OCF.src || onlyMine) return;
+  const j = { m: 1, b3: 2, b5: 3 }[OCF.src], n = codes.length, S = new Map(), need = [], cnt = { 'GRAĆ': 0, 'OBSERWUJ': 0 };
+  let done = 0, tot = 0;
+  B.forEach(L => L.forEach(k => { tot++; const key = ocKey(k), v = OCC.get(key); if (v && v[0] === n) done++; else if (!ocFly.has(key)) need.push(k); if (v) { S.set(k, v[j]); const t = ocVerd(v[j]); if (t in cnt) cnt[t]++; } }));
+  B.forEach(L => { const f = L.filter(k => S.has(k) && OCF.lv.includes(ocVerd(S.get(k)))).sort((a, b) => S.get(b) - S.get(a)); L.length = 0; L.push(...f); });
+  ocInfo = { tot, done, cnt, S }; ocQ = need; ocPump();
+}
+function ocRowHtml() {
+  const src = [['', 'wył'], ['m', 'model'], ['b3', 'BANK +3'], ['b5', 'BANK +5']];
+  let h = `<div class="flt"><span>ocena:</span>${src.map(([s, l]) => `<button class="chip ${OCF.src === s ? 'on' : ''}" data-oc="${s}">${l}</button>`).join('')}</div>`;
+  if (!ocInfo) return h;
+  h += `<div class="flt"><span></span>${['GRAĆ', 'OBSERWUJ'].map(v => `<button class="chip ${OCF.lv.includes(v) ? 'on' : ''}" data-ol="${v}">${v} · ${ocInfo.cnt[v]}</button>`).join('')}</div>`;
+  const nm = { m: 'ocena modelu (prosta progresja do k8)', b3: 'ocena BANK +3', b5: 'ocena BANK +5' }[OCF.src];
+  return h + `<div class="hint" style="margin:0 2px 6px">${ocInfo.done < ocInfo.tot ? `oceniam modele z listy: <b>${ocInfo.done}/${ocInfo.tot}</b>… · ` : ''}${nm} — tylko ${OCF.lv.join(' i ') || '— wybierz GRAĆ / OBSERWUJ'}, od najwyższej punktacji (pkt z 9, jak w statystykach)</div>`;
+}
+function ocTag(k) { if (!ocInfo || !ocInfo.S.has(k)) return ''; const s = ocInfo.S.get(k), v = ocVerd(s); return ` <span class="ocb ${v === 'GRAĆ' ? 'g' : v === 'OBSERWUJ' ? 'o' : ''}">${v} ${Math.max(s, 0)}/9</span>`; }
 function statsHtml(r) {
   if (!lab) return '';
   const S = modelStats(), n = codes.length;
@@ -1341,6 +1448,8 @@ function render() {
     const mb = $('moreBtn'); if (mb) mb.onclick = () => { const h0 = document.documentElement.scrollHeight, y0 = scrollY; tabN += 150; render(); if (tabAsc) scrollTo(0, y0 + document.documentElement.scrollHeight - h0); };
   }
   if (view === 'gra') {
+    el.querySelectorAll('[data-oc]').forEach(b => b.onclick = () => { OCF.src = b.dataset.oc; ocSave(); render(); });
+    el.querySelectorAll('[data-ol]').forEach(b => b.onclick = () => { const v = b.dataset.ol; OCF.lv = OCF.lv.includes(v) ? OCF.lv.filter(x => x !== v) : [...OCF.lv, v]; ocSave(); render(); });
     el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
       const k = +b.dataset.k; KS = KS.includes(k) ? KS.filter(x => x !== k) : [...KS, k].sort((a, b) => a - b); lsSet(LSK.ks, JSON.stringify(KS)); render();
     });

@@ -356,7 +356,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.14.0';
+const APP_VER = '1.15.3';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -997,7 +997,62 @@ function modelStats() {   // z etykiet wybranego modelu (całe dzieje)
   const afterSeq = bi.filter(j => j + 1 < cyc).map(j => ends[j + 1][0] === 1 ? String(ends[j + 1][2]) : 'BUST');   // krok WIN w cyklu zaraz po każdym BUST-cie
   return { bets, cyc, w: cyc - bi.length, b: bi.length, wk, maxRun, twoRow, minGap, afterSeq,
     lastBRow: lastB >= 0 ? ends[lastB][1] : null, sinceB: lastB >= 0 ? cyc - 1 - lastB : null,
-    k5: ends.filter(e => e[2] >= 5).length, k5w: ends.filter(e => e[0] === 1 && e[2] >= 5).length, last: ends.slice(-16) };
+    k5: ends.filter(e => e[2] >= 5).length, k5w: ends.filter(e => e[0] === 1 && e[2] >= 5).length, last: ends.slice(-16), ends };
+}
+// ===== OCENA (pkt z 9) — liczona w telefonie, jak w RAZEM: bootstrap i permutacja (5000×), 5 okresów, LOST przy K7 / K8, ostatnie 40% =====
+const OC = (() => {
+  const MST = [8, 8, 16, 32, 64, 128, 256, 512], ODDS = 3;
+  const BST = k => k <= 8 ? MST[k - 1] : 512 * 2 ** (k - 8);   // stawki banku: jak model, dalej ×2
+  const cum = (S, k) => { let s = 0; for (let i = 1; i <= k; i++) s += S(i); return s; };
+  function prog(o, Kl, S) {   // o = kolejne zakłady (true = WIN) · progresja do Kl, przegrany Kl = LOST
+    let bs = 0, W = 0, B = 0, p = 0;
+    for (const x of o) { if (x) { p += Math.trunc(S(bs + 1) * ODDS) - cum(S, bs + 1); W++; bs = 0; } else { bs++; if (bs === Kl) { p -= cum(S, Kl); B++; bs = 0; } } }
+    return [W, B, p];
+  }
+  function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const med = a => { const s = a.slice().sort((x, y) => x - y), L = s.length; return L % 2 ? s[(L - 1) / 2] : (s[L / 2 - 1] + s[L / 2]) / 2; };
+  function boot(o, Kl, S) {
+    const rnd = rng(42), n = o.length, IT = 5000, bb = [], pb = [];
+    for (let it = 0; it < IT; it++) { const s = new Array(n); for (let j = 0; j < n; j++) s[j] = o[Math.floor(rnd() * n)]; bb.push(prog(s, Kl, S)[2]); }
+    for (let it = 0; it < IT; it++) { const a = o.slice(); for (let j = n - 1; j > 0; j--) { const q = Math.floor(rnd() * (j + 1)), t = a[j]; a[j] = a[q]; a[q] = t; } pb.push(prog(a, Kl, S)[1]); }
+    return { bootMed: med(bb), bootP: bb.filter(v => v <= 0).length / IT, permMed: med(pb) };
+  }
+  function periods(o, b, N, Kl, S) {
+    const per = []; for (let s = 0; s < 5; s++) { const lo = Math.floor(s * N / 5), hi = Math.floor((s + 1) * N / 5); per.push(prog(o.filter((_, j) => b[j] >= lo && b[j] < hi), Kl, S)[2]); }
+    return per.filter(p => p > 0).length;
+  }
+  const verdict = s => s >= 7 ? 'GRAĆ' : s >= 5 ? 'OBSERWUJ' : 'ODRZUĆ';
+  // model: cykle [krok WIN 1–8 albo 9 = LOST, wiersz rozliczenia]
+  function model(cyc, N) {
+    const o = [], b = []; cyc.forEach(([K, er]) => { const n = Math.min(K, 8); for (let k = 1; k <= n; k++) { o.push(K <= 8 && k === K); b.push(er); } });
+    if (o.length < 20) return null;
+    const okresy = periods(o, b, N, 8, i => MST[i - 1]), cut = Math.trunc(N * 0.6), [, Bo, Po] = prog(o.filter((_, j) => b[j] >= cut), 8, i => MST[i - 1]);
+    const k7 = prog(o, 7, i => MST[i - 1])[1], B = prog(o, 8, i => MST[i - 1])[1], bt = boot(o, 8, i => MST[i - 1]);
+    const pts = { 'boot med > 0': bt.bootMed > 0 ? 2 : 0, 'P(straty) < 0,35': bt.bootP < 0.35 ? 1 : 0, '5 okresów': okresy === 5 ? 2 : okresy === 4 ? 1 : 0,
+      'LOST przy K7': k7 <= 3 ? 2 : k7 <= 5 ? 1 : 0, '40%: 0 LOST, +': Bo === 0 && Po > 0 ? 1 : 0, '0 LOST K8': B === 0 ? 1 : 0 };
+    const score = Object.values(pts).reduce((a, v) => a + v, 0);
+    return { score, v: verdict(score), pts, okresy, k7, B, ...bt };
+  }
+  // bank +w: kolejne cykle modelu (krok WIN albo 9+ = LOST) → serie banku; ocena przy limicie k12 (seria dłuższa = strata całej serii)
+  function bank(cyc, N, w) {
+    const o = [], b = [], ser = []; let carry = 0;
+    cyc.forEach(([K, er]) => { const n = Math.min(K, w); for (let s = 1; s <= n; s++) { o.push(s === K); b.push(er); } if (K <= w) { ser.push(carry + K); carry = 0; } else carry += w; });
+    if (ser.length < 10) return null;
+    const lim = w === 3 ? 9 : 10, over = ser.filter(k => k > lim).length + (carry > lim ? 1 : 0), first = ser.filter(k => k <= w).length / ser.length, maxk = Math.max(...ser, carry), okresy = periods(o, b, N, 12, BST), bt = boot(o, 12, BST);
+    const pts = { 'boot med > 0': bt.bootMed > 0 ? 2 : 0, 'P(straty) < 0,35': bt.bootP < 0.35 ? 1 : 0, '5 okresów': okresy === 5 ? 2 : okresy === 4 ? 1 : 0,
+      [`k1–${w} ≥ 80%`]: first >= 0.8 ? 2 : first >= 0.7 ? 1 : 0, 'max krok ≤ k9': maxk <= 9 ? 2 : maxk <= 12 ? 1 : 0 };
+    const score = Object.values(pts).reduce((a, v) => a + v, 0);
+    return { score, v: verdict(score), pts, first, maxk, lim, over, ser: ser.length, okresy, ...bt };
+  }
+  const pct = v => Math.round(v * 1000) / 10 + '%';
+  const det = s => Object.entries(s.pts).map(([k, v]) => `${k} ${v}`).join(' · ') + ` · boot P(≤0) ${s.bootP.toFixed(2)}`;
+  return { model, bank, pct, det };
+})();
+const _oc = new Map();   // ocena: raz na model, cel i liczbę kodów (bootstrap 5000×)
+function ocStats(S) {
+  const k = tgt + '|' + selK + '|' + codes.length;
+  if (!_oc.has(k)) { const c = S.ends.map(e => [e[0] === 1 ? e[2] : 9, e[1]]), n = codes.length; _oc.set(k, { m: OC.model(c, n), b3: OC.bank(c, n, 3), b5: OC.bank(c, n, 5) }); }
+  return _oc.get(k);
 }
 function statsHtml(r) {
   if (!lab) return '';
@@ -1005,7 +1060,14 @@ function statsHtml(r) {
   const lb = S.lastBRow === null ? '<b class="ok">nie było BUST</b>' : `<b>${S.sinceB} cykli temu</b><span class="n">w.${S.lastBRow + 1} · ${n - 1 - S.lastBRow} kodów temu</span>`;
   const two = r && r.pb ? `<b class="bad">${r.pb}×${S.twoRow.length ? ` (ostatnio w.${S.twoRow[S.twoRow.length - 1] + 1})` : ''}</b>` : '<b class="ok">ani razu</b>';
   const row = (k, v) => `<span class="k">${k}</span><div class="v">${v}</div>`;
+  const O = ocStats(S), oc = o => o ? `<b class="${o.score >= 7 ? 'ok' : o.score >= 5 ? '' : 'bad'}">${o.v} · ${o.score}/9 pkt</b>` : '<b>—</b>';
+  const bk = (o, w) => o ? `<b>${OC.pct(o.first)}</b><span class="n">${o.ser} serii · <b class="${o.over ? 'bad' : 'ok'}">przekroczono k${o.lim}: ${o.over} ${o.over === 1 ? 'raz' : 'razy'}</b> · max k${o.maxk}</span>` : '<b>—</b>';
   return `<div class="stats">
+    ${row('ocena modelu (pkt z 9, jak w RAZEM)', oc(O.m))}
+    ${row('BANK +3: zamknięte w k1–3', bk(O.b3, 3))}
+    ${row('ocena BANK +3 (pkt z 9)', oc(O.b3))}
+    ${row('BANK +5: zamknięte w k1–5', bk(O.b5, 5))}
+    ${row('ocena BANK +5 (pkt z 9)', oc(O.b5))}
     ${row('cykle (gry do WIN / BUST)', `<b>${S.cyc}</b>`)}
     ${row('zakłady (wszystkie kroki)', `<b>${S.bets}</b>`)}
     ${row('WIN', `<b class="ok">${S.w}</b>`)}

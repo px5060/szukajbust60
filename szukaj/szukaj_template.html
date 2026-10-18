@@ -356,7 +356,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.15.2';
+const APP_VER = '1.15.3';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -1061,15 +1061,12 @@ function statsHtml(r) {
   const two = r && r.pb ? `<b class="bad">${r.pb}×${S.twoRow.length ? ` (ostatnio w.${S.twoRow[S.twoRow.length - 1] + 1})` : ''}</b>` : '<b class="ok">ani razu</b>';
   const row = (k, v) => `<span class="k">${k}</span><div class="v">${v}</div>`;
   const O = ocStats(S), oc = o => o ? `<b class="${o.score >= 7 ? 'ok' : o.score >= 5 ? '' : 'bad'}">${o.v} · ${o.score}/9 pkt</b>` : '<b>—</b>';
-  const ov = o => o ? `<b class="${o.over ? 'bad' : 'ok'}">${o.over} ${o.over === 1 ? 'raz' : 'razy'}</b>` : '<b>—</b>';
-  const bk = (o, w) => o ? `<b>${OC.pct(o.first)}</b><span class="n">${o.ser} serii · najwyższy krok k${o.maxk}</span>` : '<b>—</b>';
+  const bk = (o, w) => o ? `<b>${OC.pct(o.first)}</b><span class="n">${o.ser} serii · <b class="${o.over ? 'bad' : 'ok'}">przekroczono k${o.lim}: ${o.over} ${o.over === 1 ? 'raz' : 'razy'}</b> · max k${o.maxk}</span>` : '<b>—</b>';
   return `<div class="stats">
     ${row('ocena modelu (pkt z 9, jak w RAZEM)', oc(O.m))}
     ${row('BANK +3: zamknięte w k1–3', bk(O.b3, 3))}
-    ${row('BANK +3: przekroczono k9 (max progresja 9)', ov(O.b3))}
     ${row('ocena BANK +3 (pkt z 9)', oc(O.b3))}
     ${row('BANK +5: zamknięte w k1–5', bk(O.b5, 5))}
-    ${row('BANK +5: przekroczono k10 (max progresja 10)', ov(O.b5))}
     ${row('ocena BANK +5 (pkt z 9)', oc(O.b5))}
     ${row('cykle (gry do WIN / BUST)', `<b>${S.cyc}</b>`)}
     ${row('zakłady (wszystkie kroki)', `<b>${S.bets}</b>`)}

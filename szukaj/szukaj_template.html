@@ -418,7 +418,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.17.4';
+const APP_VER = '1.17.5';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -584,7 +584,8 @@ function nextPop() {
     if (b.dataset.nu !== undefined || b.dataset.nug !== undefined) {   // cofnięcie: zakład na następny wiersz znika; model dodany do MOJE GRY tylko przez 💰 też wraca
       const ks = b.dataset.nu !== undefined ? [+b.dataset.nu] : (d._sav[b.dataset.nug] || []), sp = new Set(ks.map(k => specKey(P[k])));
       setBets(getBets().filter(x => !(x.row === n && sp.has(specKey(x.m)))));
-      sp.forEach(k => { if (nxAdded.has(k) && !getBets().some(x => specKey(x.m) === k)) { setMy(getMy().filter(g => specKey(g.m) !== k)); nxAdded.delete(k); } });
+      // model, który trafił do MOJE GRY razem z zakładem (auto albo dodany w wierszu tego zakładu) i nie ma już innych zakładów → znika też z MOJE GRY (i z TERAZ w MOJE)
+      sp.forEach(k => { if (getBets().some(x => specKey(x.m) === k)) return; setMy(getMy().filter(g => !(specKey(g.m) === k && (g.auto || g.start === n || nxAdded.has(k))))); nxAdded.delete(k); });
       toast(`Cofnięto ${ks.length} zakład(y) na w.${n + 1}`); render(); nxtFill(); return;
     }
     const ks = b.dataset.nb !== undefined ? [+b.dataset.nb] : (d._grp[b.dataset.ng] || []);
@@ -1263,7 +1264,7 @@ function addBet(k, row, step, stake) {
 }
 function addMyQuiet(k) {   // model z zapisanym zakładem → MOJE GRY (bez zmiany ekranu)
   const r = lastEval && lastEval.out[k], a = getMy().filter(g => specKey(g.m) !== specKey(P[k]));
-  a.push({ m: P[k].slice(0, SPECN), id: mid(k, P[k]), start: codes.length, s0: r ? r.bs + 1 : 1, t: Date.now() }); setMy(a);
+  a.push({ m: P[k].slice(0, SPECN), id: mid(k, P[k]), start: codes.length, s0: r ? r.bs + 1 : 1, t: Date.now(), auto: 1 }); setMy(a);
 }
 function ensureMyFromBets() {   // zakłady zapisane wcześniej: ich modele raz trafiają do MOJE GRY (usunięcie z MOJE później jest szanowane)
   if (!lastEval) return; let ch = false;

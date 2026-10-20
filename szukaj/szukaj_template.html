@@ -42,7 +42,7 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 .mc.k5{border-left-color:#2e75b6}.mc.k6{border-left-color:#7030a0}.mc.k7{border-left-color:var(--or)}
 .mc{cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.mc.hold{filter:brightness(1.35)}
 .respop{position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translate(-50%,-140%);transition:transform .3s;z-index:60;width:min(94vw,560px);border-radius:12px;padding:10px 14px;color:#fff;box-shadow:0 8px 30px #000a;cursor:pointer}
-.respop.in{transform:translate(-50%,0)}.respop.nxt{background:#c97a45}.nx-g{margin-top:6px;border-radius:8px;padding:4px 8px;background:#0003}.nx-g.g{border-left:5px solid #5fd38a}.nx-g.o{border-left:5px solid #FFD700}.nx-g.x{border-left:5px solid #ff6b6b}.nx-g.q{border-left:5px solid #ffffff66}.nx-h{font-size:14px}.nx-h span{opacity:.8;font-size:12px}.nx-h .nx-r{display:block;opacity:.9;font-size:12px}.nx-p{font-size:11px;opacity:.85;margin-left:4px}.nx-i{display:flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:wrap}.nx-b{border:1.5px solid #fff;background:#ffffff26;color:#fff;border-radius:7px;padding:1px 7px;font-size:14px;cursor:pointer}.nx-ok{white-space:nowrap;font-size:11px;font-weight:800;background:#1f8a4c;border-radius:6px;padding:1px 6px}.nx-undo{background:#0003!important;border-style:dashed!important}.nx-u{font-size:13px}
+.respop.in{transform:translate(-50%,0)}.respop.nxt{background:#c97a45}.nx-g{margin-top:6px;border-radius:8px;padding:4px 8px;background:#0003}.nx-g.g{border-left:5px solid #5fd38a}.nx-g.o{border-left:5px solid #FFD700}.nx-g.x{border-left:5px solid #ff6b6b}.nx-g.q{border-left:5px solid #ffffff66}.nx-h{font-size:14px}.nx-h span{opacity:.8;font-size:12px}.nx-h .nx-r{display:block;opacity:.9;font-size:12px}.nx-p{font-size:11px;opacity:.85;margin-left:4px}.nx-i[data-nk]{cursor:pointer}.nx-rel{background:#d6eaff;color:#0d2a4a;border-radius:6px;box-shadow:inset 4px 0 #4a9be8;padding:1px 4px 1px 8px}.nx-rel .nx-b{border-color:#0d2a4a;color:#0d2a4a;background:#ffffff80}.nx-rl{font-size:11px;font-weight:800;background:#9fd0ff;color:#0d2a4a;border-radius:6px;padding:0 5px}.nx-rh{margin-top:6px;font-size:12px;background:#9fd0ff33;border:1px solid #9fd0ff99;border-radius:8px;padding:4px 8px;white-space:normal}.nx-i{display:flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:wrap}.nx-b{border:1.5px solid #fff;background:#ffffff26;color:#fff;border-radius:7px;padding:1px 7px;font-size:14px;cursor:pointer}.nx-ok{white-space:nowrap;font-size:11px;font-weight:800;background:#1f8a4c;border-radius:6px;padding:1px 6px}.nx-undo{background:#0003!important;border-style:dashed!important}.nx-u{font-size:13px}
 .nx-all{display:block;width:100%;margin:4px 0 2px;border:1.5px solid #fff;background:#ffffff26;color:#fff;border-radius:8px;padding:5px;font-weight:800;font-size:13px;cursor:pointer}#appbar .nxb{font-weight:800;color:inherit;white-space:nowrap}#appbar .nxb.on{background:#c97a45;border-color:#c97a45;color:#fff}.respop.win{background:#1f8a4c}.respop.loss{background:#b3261e}
 .respop .rp-h{font-size:22px;font-weight:900}.respop .rp-s{font-size:13.5px;margin-top:2px}.respop .rp-l{margin-top:6px;font-size:12.5px;max-height:40vh;overflow:auto}
 .respop .rp-i{padding:2px 0;border-top:1px solid #ffffff33}.respop .rp-x{font-size:11px;opacity:.75;margin-top:5px;text-align:right}
@@ -310,6 +310,16 @@ function labels(m, R) {
   }
   return { K, A, B, Q };
 }
+// grupy pokrewieństwa: para modeli ≥90% wspólnych wierszy zakładu (liczone od mniejszego zbioru) → ta sama litera A, B, C…
+function relGroups(S) {
+  const p = S.map((_, i) => i), f = i => p[i] === i ? i : (p[i] = f(p[i]));
+  for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
+    const a = S[i].size <= S[j].size ? S[i] : S[j], b = a === S[i] ? S[j] : S[i]; if (a.size < 30) continue;
+    let c = 0; a.forEach(r => { if (b.has(r)) c++; }); if (c >= 0.9 * a.size) p[f(i)] = f(j);
+  }
+  const r = S.map((_, i) => f(i)), cnt = {}, L = {}; let nx = 0; r.forEach(x => { cnt[x] = (cnt[x] || 0) + 1; });
+  return r.map(x => cnt[x] < 2 ? '' : (L[x] || (L[x] = String.fromCharCode(65 + nx++))));
+}
 function setData(d) { AL = d.AL; X = Int8Array.from(d.X); N = X.length; Y = Uint8Array.from(d.Y); _tc.clear(); }
 function evalAll(d) {
   const out = [];
@@ -407,6 +417,10 @@ onmessage = e => {
     postMessage({ type: 'betres', id: d.id, res });
   }
   if (d.type === 'search') { const f = search(d); postMessage({ type: 'search', found: f }); }
+  if (d.type === 'rel') {   // 💰: spokrewnione = ≥90% wspólnych wierszy zakładu w historii (min. 30 zakładów)
+    const S = d.ms.map(m => { const K = labels(m, d.R).K, s = new Set(); for (let i = 0; i < N; i++) if (K[i] >= 6 && K[i] <= 8) s.add(i); return s; });
+    postMessage({ type: 'rel', key: d.key, sks: d.sks, g: relGroups(S) });
+  }
   if (d.type === 'oc') {   // ocena modelu i banków +3 / +5 (filtr „ocena:” na GRA)
     const L = labels(d.m, d.R), c = []; for (let i = 0; i < N; i++) { if (L.K[i] === 6) c.push([L.A[i], i]); else if (L.K[i] === 8) c.push([9, i]); }
     const sc = o => o ? o.score : -1; postMessage({ type: 'oc', key: d.key, n: d.n, m: sc(OC.model(c, N)), b3: sc(OC.bank(c, N, 3)), b5: sc(OC.bank(c, N, 5)) });
@@ -418,7 +432,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.17.5';
+const APP_VER = '1.17.7';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -579,7 +593,8 @@ function nextPop() {
   const old = $('resPop'); if (old) { old.remove(); if (old.classList.contains('nxt')) return; }
   const d = document.createElement('div'); d.id = 'resPop'; d.className = 'respop nxt';
   d.onclick = e => {   // 💰 przy modelu = zapisz zakład (→ MOJE · ZAKŁADY), „💰 wszystkie” = cała grupa; ↶ = cofnij zapisany zakład; reszta okienka = zamknij
-    const b = e.target.closest('[data-nb],[data-ng],[data-nu],[data-nug]'); if (!b) return d.remove();
+    const b = e.target.closest('[data-nb],[data-ng],[data-nu],[data-nug]');
+    if (!b) { const m = e.target.closest('[data-nk]'); d.remove(); if (m) openStats(+m.dataset.nk); return; }   // dotknięcie modelu → jego statystyki
     e.stopPropagation(); const n = codes.length;
     if (b.dataset.nu !== undefined || b.dataset.nug !== undefined) {   // cofnięcie: zakład na następny wiersz znika; model dodany do MOJE GRY tylko przez 💰 też wraca
       const ks = b.dataset.nu !== undefined ? [+b.dataset.nu] : (d._sav[b.dataset.nug] || []), sp = new Set(ks.map(k => specKey(P[k])));
@@ -596,11 +611,25 @@ function nextPop() {
 
   document.body.appendChild(d); nxtFill(); setTimeout(() => d.classList.add('in'), 10);
 }
+// 💰: modele spokrewnione (≥90% wspólnych wierszy zakładu w historii) — liczone w osobnym wątku, podświetlone na niebiesko
+let RELW = null, relFly = ''; const RELC = new Map();
+function relGet(L) {
+  if (L.length < 2) return {};
+  const sks = L.map(x => specKey(P[x.k])), key = tgt + '#' + codes.length + '#' + sks.join('#');
+  if (RELC.has(key)) return RELC.get(key);
+  if (relFly !== key) {
+    relFly = key;
+    if (!RELW) { RELW = new Worker(WURL); RELW.onmessage = e => { const d = e.data; if (d.type !== 'rel') return; const M = {}; d.sks.forEach((sk, i) => { if (d.g[i]) M[sk] = d.g[i]; }); RELC.set(d.key, M); if (RELC.size > 30) RELC.delete(RELC.keys().next().value); if (relFly === d.key) relFly = ''; nxtFill(); }; }
+    RELW.postMessage(ocData()); RELW.postMessage({ type: 'rel', key, sks, ms: L.map(x => P[x.k]), R });
+  }
+  return null;   // null = jeszcze liczę
+}
 const nxAdded = new Set();   // modele dodane do MOJE GRY przez 💰 (cofnięcie zakładu je usuwa)
 const nxSaved = k => getBets().some(b => b.row === codes.length && specKey(b.m) === specKey(P[k]));   // zakład na następny wiersz już zapisany
 function nxtFill() {   // treść okienka 💰: modele z GRĄ na następnym wierszu w grupach wg oceny modelu (prosta progresja do k8, pkt z 9)
   const d = $('resPop'); if (!d || !d.classList.contains('nxt')) return;
   const n = codes.length, L = lastEval && !busy ? betsOnNextRow().sort((a, b) => b.mine - a.mine || b.bs - a.bs) : [], sum = L.reduce((s, x) => s + ST[x.bs], 0);
+  const RG = relGet(L), rl = x => RG ? RG[specKey(P[x.k])] || '' : '';
   const sc = x => { const v = OCC.get(ocKey(x.k)); return v ? v[1] : null; };   // ocena (także z poprzedniego kodu, póki liczy się nowa)
   const need = L.filter(x => { const v = OCC.get(ocKey(x.k)); return (!v || v[0] !== n) && !ocFly.has(ocKey(x.k)) && !ocQ.includes(x.k); }).map(x => x.k);
   if (need.length) { ocQ.push(...need); ocPump(); }
@@ -610,11 +639,13 @@ function nxtFill() {   // treść okienka 💰: modele z GRĄ na następnym wier
     return `<div class="nx-g ${c}"><div class="nx-h"><b>${nm}</b>${pk ? ` <span>(${pk})</span>` : ''} · ${A.length} · <b>${s} zł</b><span class="nx-r">trafi: +${2 * s} · nie: −${s}</span></div>
       ${free.length > 1 ? `<button class="nx-all" data-ng="${c}">💰 zapisz zakład na wszystkie ${free.length} (${free.reduce((a, x) => a + ST[x.bs], 0)} zł)</button>` : ''}
       ${sav.length > 1 ? `<button class="nx-all nx-undo" data-nug="${c}">↶ cofnij zapisane w tej grupie (${sav.length} · ${sav.reduce((a, x) => a + ST[x.bs], 0)} zł)</button>` : ''}
-      ${A.map(x => `<div class="rp-i nx-i">${nxSaved(x.k) ? `<span class="nx-ok">✓ zapisany</span><button class="nx-b nx-u" data-nu="${x.k}">↶</button>` : `<button class="nx-b" data-nb="${x.k}">💰</button>`}${x.mine ? '▶ ' : ''}<b>${mid(x.k, P[x.k])}</b> · k${x.bs + 1} — <b>${ST[x.bs]} zł</b>${sc(x) !== null ? ` <span class="nx-p">${Math.max(sc(x), 0)}/9</span>` : ''}</div>`).join('')}</div>`; };
+      ${A.map(x => `<div class="rp-i nx-i${rl(x) ? ' nx-rel' : ''}" data-nk="${x.k}">${nxSaved(x.k) ? `<span class="nx-ok">✓ zapisany</span><button class="nx-b nx-u" data-nu="${x.k}">↶</button>` : `<button class="nx-b" data-nb="${x.k}">💰</button>`}${x.mine ? '▶ ' : ''}<b>${mid(x.k, P[x.k])}</b>${rl(x) ? ` <span class="nx-rl">🔗${rl(x)}</span>` : ''} · k${x.bs + 1} — <b>${ST[x.bs]} zł</b>${sc(x) !== null ? ` <span class="nx-p">${Math.max(sc(x), 0)}/9</span>` : ''}</div>`).join('')}</div>`; };
+  const RS = RG ? [...new Set(Object.values(RG))].sort().map(c => `<b>🔗${c}</b> ${L.filter(x => rl(x) === c).map(x => mid(x.k, P[x.k])).join(', ')}`) : [];
+  const relH = L.length < 2 ? '' : !RG ? '<div class="nx-rh">🔗 sprawdzam pokrewieństwo modeli…</div>' : RS.length ? `<div class="nx-rh">🔗 spokrewnione (≥90% wspólnych wierszy zakładu w historii — grają prawie zawsze to samo): ${RS.join(' · ')}</div>` : '';
   const q = L.filter(x => { const v = OCC.get(ocKey(x.k)); return !v || v[0] !== n; }).length;
   d.innerHTML = `<div class="rp-h">GRAJ w.${n + 1} na ${tgt}</div>
     <div class="rp-s">${busy || !lastEval ? 'przeliczam… dotknij 💰 za chwilę' : L.length ? `${L.length} model(i) · wszystkie razem <b>${sum} zł</b> · trafi: <b>+${2 * sum} zł</b> · nie: <b>−${sum} zł</b>${q ? `<br>oceniam modele: ${L.length - q}/${L.length}…` : ''}` : 'na następnym wierszu nie gra żaden model z listy GRA (krok / cykle) ani z MOJE GRY'}</div>
-    ${L.length ? `<div class="rp-l">${G.map(grp).join('')}</div>` : ''}<div class="rp-x">💰 = zapisz zakład (trafi do MOJE · ZAKŁADY) · ocena modelu = prosta progresja do k8 · dotknij poza przyciskiem, żeby zamknąć</div>`;
+    ${relH}${L.length ? `<div class="rp-l">${G.map(grp).join('')}</div>` : ''}<div class="rp-x">💰 = zapisz zakład (trafi do MOJE · ZAKŁADY) · ocena modelu = prosta progresja do k8 · niebieskie 🔗 = spokrewnione · dotknij model → statystyki · poza listą → zamknij</div>`;
 }
 function nextBtnUpd() { const b = $('nxtBtn'); if (!b) return; const L = lastEval && !busy ? betsOnNextRow() : [], s = L.reduce((a, x) => a + ST[x.bs], 0); b.textContent = L.length ? `💰 ${s}` : '💰'; b.classList.toggle('on', L.length > 0); }
 { const el = $('appbar'); if (el) { const b = document.createElement('button'); b.id = 'nxtBtn'; b.className = 'thm nxb'; b.title = 'ile postawić na następnym wierszu'; b.textContent = '💰'; b.onclick = nextPop; el.insertBefore(b, el.querySelector('.thm')); } }

@@ -42,7 +42,7 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 .mc.k5{border-left-color:#2e75b6}.mc.k6{border-left-color:#7030a0}.mc.k7{border-left-color:var(--or)}
 .mc{cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.mc.hold{filter:brightness(1.35)}
 .respop{position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translate(-50%,-140%);transition:transform .3s;z-index:60;width:min(94vw,560px);border-radius:12px;padding:10px 14px;color:#fff;box-shadow:0 8px 30px #000a;cursor:pointer}
-.respop.in{transform:translate(-50%,0)}.respop.win{background:#1f8a4c}.respop.loss{background:#b3261e}
+.respop.in{transform:translate(-50%,0)}.respop.nxt{background:#c97a45}#appbar .nxb{font-weight:800;color:inherit;white-space:nowrap}#appbar .nxb.on{background:#c97a45;border-color:#c97a45;color:#fff}.respop.win{background:#1f8a4c}.respop.loss{background:#b3261e}
 .respop .rp-h{font-size:22px;font-weight:900}.respop .rp-s{font-size:13.5px;margin-top:2px}.respop .rp-l{margin-top:6px;font-size:12.5px;max-height:40vh;overflow:auto}
 .respop .rp-i{padding:2px 0;border-top:1px solid #ffffff33}.respop .rp-x{font-size:11px;opacity:.75;margin-top:5px;text-align:right}
 .pop{position:fixed;inset:0;z-index:50;background:#000b;display:flex;align-items:flex-end;justify-content:center}
@@ -417,7 +417,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.17.0';
+const APP_VER = '1.17.1';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -573,6 +573,19 @@ function betsOnNextRow() {   // modele z GRĄ na następnym wierszu (widoczne na
   });
   return list;
 }
+// pasek: 💰 = co gram na następnym wierszu — te same modele, które po wpisaniu kodu pokaże okienko WIN / PRZEGRANA (GRA na krokach z „krok:” i grupach z „cykle:” + MOJE GRY)
+function nextPop() {
+  const old = $('resPop'); if (old) { old.remove(); if (old.classList.contains('nxt')) return; }
+  const n = codes.length, L = lastEval && !busy ? betsOnNextRow().sort((a, b) => b.mine - a.mine || b.bs - a.bs) : [], sum = L.reduce((s, x) => s + ST[x.bs], 0);
+  const d = document.createElement('div'); d.id = 'resPop'; d.className = 'respop nxt';
+  d.innerHTML = `<div class="rp-h">GRAJ w.${n + 1} na ${tgt}</div>
+    <div class="rp-s">${busy || !lastEval ? 'przeliczam… dotknij 💰 za chwilę' : L.length ? `${L.length} model(i) · do postawienia razem <b>${sum} zł</b><br>jeśli trafi ${tgt}: <b>+${2 * sum} zł</b> · jeśli nie: <b>−${sum} zł</b>` : 'na następnym wierszu nie gra żaden model z listy GRA (krok / cykle) ani z MOJE GRY'}</div>
+    ${L.length ? `<div class="rp-l">${L.map(x => `<div class="rp-i">${x.mine ? '▶ ' : ''}<b>${mid(x.k, P[x.k])}</b> · k${x.bs + 1} — <b>${ST[x.bs]} zł</b></div>`).join('')}</div>` : ''}<div class="rp-x">dotknij, żeby zamknąć</div>`;
+  d.onclick = () => d.remove();
+  document.body.appendChild(d); setTimeout(() => d.classList.add('in'), 10);
+}
+function nextBtnUpd() { const b = $('nxtBtn'); if (!b) return; const L = lastEval && !busy ? betsOnNextRow() : [], s = L.reduce((a, x) => a + ST[x.bs], 0); b.textContent = L.length ? `💰 ${s}` : '💰'; b.classList.toggle('on', L.length > 0); }
+{ const el = $('appbar'); if (el) { const b = document.createElement('button'); b.id = 'nxtBtn'; b.className = 'thm nxb'; b.title = 'ile postawić na następnym wierszu'; b.textContent = '💰'; b.onclick = nextPop; el.insertBefore(b, el.querySelector('.thm')); } }
 function showResultPop(pp) {
   const c = codes[pp.row], win = isHit(c), old = $('resPop'); if (old) old.remove();
   const items = pp.list.map(x => {
@@ -1399,6 +1412,7 @@ function renderUst() {
   return h;
 }
 function render() {
+  nextBtnUpd();
   $('hdrN').textContent = `Nr ${codes.length.toLocaleString('pl')} · BET ${tgt}`;
   const el = $('main');
   if (view === 'moje') view = 'gra';   // MOJE jest teraz w aplikacji MOJE

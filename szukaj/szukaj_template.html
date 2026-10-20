@@ -42,7 +42,8 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 .mc.k5{border-left-color:#2e75b6}.mc.k6{border-left-color:#7030a0}.mc.k7{border-left-color:var(--or)}
 .mc{cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.mc.hold{filter:brightness(1.35)}
 .respop{position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translate(-50%,-140%);transition:transform .3s;z-index:60;width:min(94vw,560px);border-radius:12px;padding:10px 14px;color:#fff;box-shadow:0 8px 30px #000a;cursor:pointer}
-.respop.in{transform:translate(-50%,0)}.respop.nxt{background:#c97a45}.nx-g{margin-top:6px;border-radius:8px;padding:4px 8px;background:#0003}.nx-g.g{border-left:5px solid #5fd38a}.nx-g.o{border-left:5px solid #FFD700}.nx-g.x{border-left:5px solid #ff6b6b}.nx-g.q{border-left:5px solid #ffffff66}.nx-h{font-size:14px}.nx-h span{opacity:.8;font-size:12px}.nx-h .nx-r{display:block;opacity:.9;font-size:12px}.nx-p{font-size:11px;opacity:.85;margin-left:4px}.nx-i{display:flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:wrap}.nx-b{border:1.5px solid #fff;background:#ffffff26;color:#fff;border-radius:7px;padding:1px 7px;font-size:14px;cursor:pointer}.nx-ok{white-space:nowrap;font-size:11px;font-weight:800;background:#1f8a4c;border-radius:6px;padding:1px 6px}.nx-all{display:block;width:100%;margin:4px 0 2px;border:1.5px solid #fff;background:#ffffff26;color:#fff;border-radius:8px;padding:5px;font-weight:800;font-size:13px;cursor:pointer}#appbar .nxb{font-weight:800;color:inherit;white-space:nowrap}#appbar .nxb.on{background:#c97a45;border-color:#c97a45;color:#fff}.respop.win{background:#1f8a4c}.respop.loss{background:#b3261e}
+.respop.in{transform:translate(-50%,0)}.respop.nxt{background:#c97a45}.nx-g{margin-top:6px;border-radius:8px;padding:4px 8px;background:#0003}.nx-g.g{border-left:5px solid #5fd38a}.nx-g.o{border-left:5px solid #FFD700}.nx-g.x{border-left:5px solid #ff6b6b}.nx-g.q{border-left:5px solid #ffffff66}.nx-h{font-size:14px}.nx-h span{opacity:.8;font-size:12px}.nx-h .nx-r{display:block;opacity:.9;font-size:12px}.nx-p{font-size:11px;opacity:.85;margin-left:4px}.nx-i{display:flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:wrap}.nx-b{border:1.5px solid #fff;background:#ffffff26;color:#fff;border-radius:7px;padding:1px 7px;font-size:14px;cursor:pointer}.nx-ok{white-space:nowrap;font-size:11px;font-weight:800;background:#1f8a4c;border-radius:6px;padding:1px 6px}.nx-undo{background:#0003!important;border-style:dashed!important}.nx-u{font-size:13px}
+.nx-all{display:block;width:100%;margin:4px 0 2px;border:1.5px solid #fff;background:#ffffff26;color:#fff;border-radius:8px;padding:5px;font-weight:800;font-size:13px;cursor:pointer}#appbar .nxb{font-weight:800;color:inherit;white-space:nowrap}#appbar .nxb.on{background:#c97a45;border-color:#c97a45;color:#fff}.respop.win{background:#1f8a4c}.respop.loss{background:#b3261e}
 .respop .rp-h{font-size:22px;font-weight:900}.respop .rp-s{font-size:13.5px;margin-top:2px}.respop .rp-l{margin-top:6px;font-size:12.5px;max-height:40vh;overflow:auto}
 .respop .rp-i{padding:2px 0;border-top:1px solid #ffffff33}.respop .rp-x{font-size:11px;opacity:.75;margin-top:5px;text-align:right}
 .pop{position:fixed;inset:0;z-index:50;background:#000b;display:flex;align-items:flex-end;justify-content:center}
@@ -417,7 +418,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.17.3';
+const APP_VER = '1.17.4';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -577,15 +578,24 @@ function betsOnNextRow() {   // modele z GRĄ na następnym wierszu (widoczne na
 function nextPop() {
   const old = $('resPop'); if (old) { old.remove(); if (old.classList.contains('nxt')) return; }
   const d = document.createElement('div'); d.id = 'resPop'; d.className = 'respop nxt';
-  d.onclick = e => {   // 💰 przy modelu = zapisz zakład (→ MOJE · ZAKŁADY), „💰 wszystkie” = cała grupa; reszta okienka = zamknij
-    const b = e.target.closest('[data-nb],[data-ng]'); if (!b) return d.remove();
-    e.stopPropagation(); const n = codes.length, ks = b.dataset.nb !== undefined ? [+b.dataset.nb] : (d._grp[b.dataset.ng] || []);
-    const L = betsOnNextRow(); ks.forEach(k => { const x = L.find(y => y.k === k); if (x && !nxSaved(k)) addBet(k, n, x.bs + 1, ST[x.bs]); });
+  d.onclick = e => {   // 💰 przy modelu = zapisz zakład (→ MOJE · ZAKŁADY), „💰 wszystkie” = cała grupa; ↶ = cofnij zapisany zakład; reszta okienka = zamknij
+    const b = e.target.closest('[data-nb],[data-ng],[data-nu],[data-nug]'); if (!b) return d.remove();
+    e.stopPropagation(); const n = codes.length;
+    if (b.dataset.nu !== undefined || b.dataset.nug !== undefined) {   // cofnięcie: zakład na następny wiersz znika; model dodany do MOJE GRY tylko przez 💰 też wraca
+      const ks = b.dataset.nu !== undefined ? [+b.dataset.nu] : (d._sav[b.dataset.nug] || []), sp = new Set(ks.map(k => specKey(P[k])));
+      setBets(getBets().filter(x => !(x.row === n && sp.has(specKey(x.m)))));
+      sp.forEach(k => { if (nxAdded.has(k) && !getBets().some(x => specKey(x.m) === k)) { setMy(getMy().filter(g => specKey(g.m) !== k)); nxAdded.delete(k); } });
+      toast(`Cofnięto ${ks.length} zakład(y) na w.${n + 1}`); render(); nxtFill(); return;
+    }
+    const ks = b.dataset.nb !== undefined ? [+b.dataset.nb] : (d._grp[b.dataset.ng] || []);
+    const L = betsOnNextRow(); ks.forEach(k => { const x = L.find(y => y.k === k); if (x && !nxSaved(k)) { if (!isMine(k)) nxAdded.add(specKey(P[k])); addBet(k, n, x.bs + 1, ST[x.bs]); } });
     if (ks.length > 1) toast(`Zapisano ${ks.length} zakład(y) na w.${n + 1} — są w MOJE · ZAKŁADY`);
     render(); nxtFill();
   };
+
   document.body.appendChild(d); nxtFill(); setTimeout(() => d.classList.add('in'), 10);
 }
+const nxAdded = new Set();   // modele dodane do MOJE GRY przez 💰 (cofnięcie zakładu je usuwa)
 const nxSaved = k => getBets().some(b => b.row === codes.length && specKey(b.m) === specKey(P[k]));   // zakład na następny wiersz już zapisany
 function nxtFill() {   // treść okienka 💰: modele z GRĄ na następnym wierszu w grupach wg oceny modelu (prosta progresja do k8, pkt z 9)
   const d = $('resPop'); if (!d || !d.classList.contains('nxt')) return;
@@ -594,11 +604,12 @@ function nxtFill() {   // treść okienka 💰: modele z GRĄ na następnym wier
   const need = L.filter(x => { const v = OCC.get(ocKey(x.k)); return (!v || v[0] !== n) && !ocFly.has(ocKey(x.k)) && !ocQ.includes(x.k); }).map(x => x.k);
   if (need.length) { ocQ.push(...need); ocPump(); }
   const G = [['GRAĆ', 'g', s => s >= 7, '7–9 pkt'], ['OBSERWUJ', 'o', s => s >= 5 && s < 7, '5–6 pkt'], ['NIE GRAĆ', 'x', s => s < 5, 'poniżej 5 pkt'], ['liczę ocenę…', 'q', s => s === null, '']];
-  d._grp = {};
-  const grp = ([nm, c, f, pk]) => { const A = L.filter(x => f(sc(x))); if (!A.length) return ''; const s = A.reduce((a, x) => a + ST[x.bs], 0), free = A.filter(x => !nxSaved(x.k)); d._grp[c] = free.map(x => x.k);
+  d._grp = {}; d._sav = {};
+  const grp = ([nm, c, f, pk]) => { const A = L.filter(x => f(sc(x))); if (!A.length) return ''; const s = A.reduce((a, x) => a + ST[x.bs], 0), free = A.filter(x => !nxSaved(x.k)), sav = A.filter(x => nxSaved(x.k)); d._grp[c] = free.map(x => x.k); d._sav[c] = sav.map(x => x.k);
     return `<div class="nx-g ${c}"><div class="nx-h"><b>${nm}</b>${pk ? ` <span>(${pk})</span>` : ''} · ${A.length} · <b>${s} zł</b><span class="nx-r">trafi: +${2 * s} · nie: −${s}</span></div>
       ${free.length > 1 ? `<button class="nx-all" data-ng="${c}">💰 zapisz zakład na wszystkie ${free.length} (${free.reduce((a, x) => a + ST[x.bs], 0)} zł)</button>` : ''}
-      ${A.map(x => `<div class="rp-i nx-i">${nxSaved(x.k) ? '<span class="nx-ok">✓ zapisany</span>' : `<button class="nx-b" data-nb="${x.k}">💰</button>`}${x.mine ? '▶ ' : ''}<b>${mid(x.k, P[x.k])}</b> · k${x.bs + 1} — <b>${ST[x.bs]} zł</b>${sc(x) !== null ? ` <span class="nx-p">${Math.max(sc(x), 0)}/9</span>` : ''}</div>`).join('')}</div>`; };
+      ${sav.length > 1 ? `<button class="nx-all nx-undo" data-nug="${c}">↶ cofnij zapisane w tej grupie (${sav.length} · ${sav.reduce((a, x) => a + ST[x.bs], 0)} zł)</button>` : ''}
+      ${A.map(x => `<div class="rp-i nx-i">${nxSaved(x.k) ? `<span class="nx-ok">✓ zapisany</span><button class="nx-b nx-u" data-nu="${x.k}">↶</button>` : `<button class="nx-b" data-nb="${x.k}">💰</button>`}${x.mine ? '▶ ' : ''}<b>${mid(x.k, P[x.k])}</b> · k${x.bs + 1} — <b>${ST[x.bs]} zł</b>${sc(x) !== null ? ` <span class="nx-p">${Math.max(sc(x), 0)}/9</span>` : ''}</div>`).join('')}</div>`; };
   const q = L.filter(x => { const v = OCC.get(ocKey(x.k)); return !v || v[0] !== n; }).length;
   d.innerHTML = `<div class="rp-h">GRAJ w.${n + 1} na ${tgt}</div>
     <div class="rp-s">${busy || !lastEval ? 'przeliczam… dotknij 💰 za chwilę' : L.length ? `${L.length} model(i) · wszystkie razem <b>${sum} zł</b> · trafi: <b>+${2 * sum} zł</b> · nie: <b>−${sum} zł</b>${q ? `<br>oceniam modele: ${L.length - q}/${L.length}…` : ''}` : 'na następnym wierszu nie gra żaden model z listy GRA (krok / cykle) ani z MOJE GRY'}</div>

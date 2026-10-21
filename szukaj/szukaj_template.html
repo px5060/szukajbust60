@@ -83,7 +83,7 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 .st.p1{background:var(--or);color:#fff;box-shadow:0 0 0 2px #fff inset;font-size:14px}
 .mc.abust .st.p1{background:#8e2a2a}   /* model po LOST-cie: GRAJ na czerwono */
 .mc.abust{border:5px solid transparent;border-radius:6px;border-image:repeating-linear-gradient(-45deg,#a8423a 0 12px,#e8e2e2 12px 24px) 5}
-.st.real{background:#7a1f1f!important;color:#fff!important;border:2px solid #ff6b6b!important;box-shadow:0 0 0 1px #0006}.st .rb{display:block;margin-top:4px;font-size:12px;font-weight:800;color:#ffd9d9}
+.st.real{background:#7a1f1f!important;color:#fff!important;border:2px solid #ff6b6b!important;box-shadow:0 0 0 1px #0006}.st.real.g{background:#17663a!important;border-color:#5fd38a!important}.st .rb{display:block;margin-top:4px;font-size:12px;font-weight:800;color:#ffe3e3}.st.real.g .rb{color:#d6ffe4}
 .st.p2{background:rgba(201,122,69,.18);color:#ffcfa8;border:1.5px dashed var(--or)}
 .st.p3{background:#DEEBF7;color:#1F4E78}
 .st.p6{background:var(--pan);color:var(--mu);font-weight:500}
@@ -435,7 +435,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.18.2';
+const APP_VER = '1.18.3';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -811,8 +811,8 @@ function card(k, m, r, kind) {
   const after = r.sinceB === 0 ? `<div class="aft">BUST w w.${r.lbr + 1} (${n - 1 - r.lbr} ${wW(n - 1 - r.lbr)} temu) → teraz cykl po BUST-cie, krok ${step}/8</div>`
     : r.sinceB > 0 ? `<div class="aft dim">ostatni BUST ${r.sinceB} ${cyW(r.sinceB)} temu (w.${r.lbr + 1})</div>` : '';
   const every = r.nbu ? Math.round(cyc / r.nbu) : 0;
-  const rb = realBet(k, r);   // prawdziwy zakład z MOJE · ZAKŁADY → czerwona ramka zamiast propozycji
-  if (rb) st = (kind === 'gra' || kind === 'czeka') ? st.replace('class="st ', 'class="st real ').replace(/<\/div>$/, `<span class="rb">${rb}</span></div>`) : st + `<div class="st real"><span class="rb">${rb}</span></div>`;
+  const rb = realBet(k, r);   // prawdziwy zakład z MOJE · ZAKŁADY: zielona ramka = postawiony (czeka na wynik), czerwona = czekamy na kolejny zakład
+  if (rb) st = (kind === 'gra' || kind === 'czeka') ? st.replace('class="st ', `class="st real ${rb[0]} `).replace(/<\/div>$/, `<span class="rb">${rb[1]}</span></div>`) : st + `<div class="st real ${rb[0]}"><span class="rb">${rb[1]}</span></div>`;
   return `<div class="mc k${Math.min(step, 7)}${isTop(r) ? ' ktop' : ''}${r.sinceB === 0 ? ' abust' : ''}" data-mk="${k}"><div class="h"><span class="id">${mid(k, m)}${isTop(r) ? ` <span class="top">★ ${topCyc()}+ cykli</span>` : ''}${ocTag(k)}</span><span class="stk">krok ${step} · ${stake} zł</span></div>
     <div class="rule">${cardStats(r)}</div>${after}${st}
     <div class="hist"><span>WIN <b>${r.nw}</b></span><span>BUST <b>${r.nbu}</b>/${lim === null ? '—' : lim}${every ? ` (co ~${every})` : ''}</span><span>BUST po BUST-cie <b class="${r.pb ? 'neg' : 'pos'}">${r.pb}</b></span><span>po BUST-cie WIN <b>${r.pw}</b></span><span class="${r.pnl >= 0 ? 'pos' : 'neg'}">${r.pnl >= 0 ? '+' : ''}${r.pnl} zł</span></div>
@@ -1306,8 +1306,8 @@ function realBet(k, r) {
   if (!_rbC.M || _rbC.n !== n || Date.now() - _rbC.t > 500) { const M = new Map(); getBets().forEach(x => { const sk = specKey(x.m); if (!M.has(sk)) M.set(sk, []); M.get(sk).push(x); }); M.forEach(a => a.sort((x, y) => x.row - y.row || x.t - y.t)); _rbC = { t: Date.now(), n, M }; }
   const B = _rbC.M.get(specKey(P[k])); if (!B) return null;
   const pend = B.find(x => x.row >= n), last = B.filter(x => x.row < n).pop();
-  if (pend) return `✔ ZAKŁAD POSTAWIONY (MOJE · ZAKŁADY): w.${pend.row + 1} · k${pend.step} · ${pend.stake} zł`;
-  if (last && r.le < last.row) return `✔ W GRZE (MOJE · ZAKŁADY): zakład w.${last.row + 1} · k${last.step} · ${last.stake} zł przegrany — stawiasz kolejny krok`;
+  if (pend) return ['g', `✔ ZAKŁAD POSTAWIONY (MOJE · ZAKŁADY): w.${pend.row + 1} · k${pend.step} · ${pend.stake} zł — czeka na wynik`];   // zielona: postawiony, nierozstrzygnięty
+  if (last && r.le < last.row) return ['r', `⏳ CZEKA NA KOLEJNY ZAKŁAD (MOJE · ZAKŁADY): zakład w.${last.row + 1} · k${last.step} · ${last.stake} zł przegrany — stawiasz kolejny krok`];   // czerwona: seria trwa
   return null;
 }
 function getBets() { try { const v = JSON.parse(lsGet(BKEY(), '[]')); return Array.isArray(v) ? v.filter(b => b && Array.isArray(b.m)) : []; } catch (e) { return []; } }

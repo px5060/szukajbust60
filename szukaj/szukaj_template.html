@@ -434,7 +434,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.18.4';
+const APP_VER = '1.18.5';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -856,7 +856,7 @@ function myCardsHtml(out, my, myOn, selMine) {
       if (res) s += `<div class="mc ${res.win ? 'mwin' : 'mbust'}${sel}" data-mk="${k}"><div class="h"><span class="id">${mid(k, P[k])}</span><span class="stk">${res.win ? 'WIN' : 'BUST'}</span></div>${head}
         <div class="st ${res.win ? 'pw' : 'pb'}">${res.win ? `WIN na kroku ${res.k} (${ST[res.k - 1]} zł) w w.${res.row + 1}` : `BUST na kroku 8 w w.${res.row + 1}`}<span class="s">Twój wynik od wejścia: ${res.pnl >= 0 ? '+' : ''}${res.pnl} zł</span></div>
         <button class="btn more" data-stop="${esc(key)}">Zakończ — usuń z MOJE GRY</button></div>`;
-      else s += card(k, P[k], r, phaseOf(r)).replace('<div class="rule">', head + '<div class="rule">').replace('class="mc ', `class="mc${sel} `).replace('dotknij → TABELA ·', 'dotknij → tabela w MOJE ·') +
+      else s += card(k, P[k], r, phaseOf(r)).replace('<div class="rule">', head + '<div class="rule">').replace('class="mc ', `class="mc${sel} `).replace('przytrzymaj → TABELA', 'przytrzymaj → tabela modelu') +
         `<button class="btn more" data-stop="${esc(key)}" style="margin:-2px 0 8px">Przestań śledzić ${mid(k, P[k])}</button>`;
     });
   return s + '</div>';

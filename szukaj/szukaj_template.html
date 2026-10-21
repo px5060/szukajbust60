@@ -215,6 +215,7 @@ th{color:var(--mu);font-weight:600}
 <nav>
   <button data-v="gra" class="on">GRA</button>
   <button data-v="tab">TABELA</button>
+  <button data-v="moje">W MOJE</button>
   <button data-v="ust">SZUKAJ</button>
 </nav>
 <script id="wsrc" type="text/js-worker">
@@ -433,7 +434,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.18.0';
+const APP_VER = '1.18.1';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -1396,7 +1397,7 @@ function renderMoje() {
   if (!my.length) return `<div class="note"><b>MOJE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA dotknij kartę modelu → „▶ Gram ten model”.</div>` + betsSummary();
   if (!my.some(x => x.k === selK)) { selK = (myOn[0] || my[0]).k; needLabels(); }
   tabMine = true;
-  const h = myCardsHtml(out, my, myOn, selK) + betsSummary() + `<div class="note" style="margin-top:4px">Tabela modelu <b>${mid(selK, P[selK])}</b> — dotknij innej karty wyżej, żeby zmienić model.</div>` + renderTab();
+  const h = `<div class="note"><b>W MOJE</b> — modele dodane do MOJE z tej aplikacji (${my.length}, w grze ${myOn.length}). Wszystkie moje gry ze wszystkich aplikacji: <a href="/moje/" style="color:var(--or);font-weight:800">⇢ otwórz MOJE</a></div>` + myCardsHtml(out, my, myOn, selK) + betsSummary() + `<div class="note" style="margin-top:4px">Tabela modelu <b>${mid(selK, P[selK])}</b> — dotknij innej karty wyżej, żeby zmienić model.</div>` + renderTab();
   tabMine = false;
   return h;
 }
@@ -1500,7 +1501,6 @@ function render() {
   nextBtnUpd();
   $('hdrN').textContent = `Nr ${codes.length.toLocaleString('pl')} · BET ${tgt}`;
   const el = $('main');
-  if (view === 'moje') view = 'gra';   // MOJE jest teraz w aplikacji MOJE
   el.innerHTML = view === 'gra' ? renderGra() : view === 'tab' ? renderTab() : view === 'moje' ? renderMoje() : renderUst();
   const hm = $('hdrModel');   // opis modelu w nagłówku (TABELA / MOJE)
   if (hm) { const m = (view === 'tab' || view === 'moje') && selK !== null && P[selK] && !(view === 'moje' && !getMy().length) ? P[selK] : null;

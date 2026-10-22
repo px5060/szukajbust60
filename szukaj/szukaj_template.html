@@ -38,6 +38,8 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 .sec{background:var(--pan);border:1px solid var(--bd);border-radius:10px;padding:8px;margin-bottom:10px}
 .sh{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 6px;font-size:13px;gap:8px}
 .sh b{font-size:14px}.sh .m{color:var(--mu);font-size:12px}
+.msec{background:var(--pan);border:1px solid var(--bd);border-radius:10px;padding:4px 8px;margin-bottom:8px}.msec>summary{font-weight:800;cursor:pointer;padding:6px 2px}
+.mt{border-left:5px solid var(--bd);background:var(--card);border-radius:8px;padding:6px 9px;margin:6px 0;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.mt.hold{filter:brightness(1.35)}.mt .mtk{float:right;font-weight:800}.mt .mts{font-size:12px;color:var(--mu);margin-top:2px}.mt.now{border-left-color:var(--or)}.mt.rbg{border-left-color:var(--gr);background:#17663a40}.mt.rbr{border-left-color:#ff6b6b;background:#7a1f1f66}.mt.w{border-left-color:var(--gr)}.mt.l{border-left-color:#ff6b6b}
 .mc{border-left:5px solid var(--bd);background:var(--card);border-radius:8px;padding:7px 9px;margin-bottom:6px}
 .mc.k5{border-left-color:#2e75b6}.mc.k6{border-left-color:#7030a0}.mc.k7{border-left-color:var(--or)}
 .mc{cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.mc.hold{filter:brightness(1.35)}
@@ -434,7 +436,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.18.6';
+const APP_VER = '1.18.7';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -1395,16 +1397,27 @@ document.addEventListener('click', e => {
   if (d) { e.stopPropagation(); if (confirm('Usunąć ten wpis z MOJE ZAKŁADY?')) { setBets(getBets().filter(b => b.t !== +d.dataset.bdel)); if (statK !== null) renderSheet(); render(); } return; }
   if (g) { e.stopPropagation(); const b = getBets().find(x => x.t === +g.dataset.bgo); if (b) flashBet(b); }
 }, true);
+// ===== W MOJE: tylko kafelki moich modeli z tej aplikacji — W GRZE · CZEKAJĄ · ZAKOŃCZONE, zwijane (bez tabel i statystyk) =====
+const MFK = CFG.app + '_szukaj_v1_mfold', mfGet = () => { try { const v = JSON.parse(lsGet(MFK, '{}')); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } };
+document.addEventListener('toggle', e => { const k = e.target && e.target.dataset && e.target.dataset.mf; if (!k) return; const F = mfGet(); F[k] = e.target.open ? 1 : 0; lsSet(MFK, JSON.stringify(F)); }, true);
+function myTile(k, r, res) {
+  const n = codes.length, rb = res ? null : realBet(k, r);
+  const st = res ? (res.win ? `<span class="pos">✔ WIN k${res.k}</span> w w.${res.row + 1}` : `<span class="neg">✖ LOST</span> w w.${res.row + 1}`) + ` · <b class="${res.pnl >= 0 ? 'pos' : 'neg'}">${res.pnl >= 0 ? '+' : ''}${res.pnl} zł</b>`
+    : r.ph === 2 ? (r.wz === n ? `<b>GRAJ w.${n + 1}</b>` : `zakład na w.${r.wz + 1} (za ${r.wz + 1 - n} w.)`) : r.ph === 1 ? 'czeka na TRIGGER' : 'czeka na STEP';
+  return `<div class="mt${res ? (res.win ? ' w' : ' l') : rb ? ' rb' + rb[0] : r.ph === 2 && r.wz === n ? ' now' : ''}" data-mk="${k}"><b>${mid(k, P[k])}</b>${res ? '' : `<span class="mtk">k${r.bs + 1} · ${ST[r.bs]} zł</span>`}` +
+    `<div class="mts">${st}${rb ? ` · <b>${rb[0] === 'g' ? '✔ zakład postawiony' : '⏳ czeka na kolejny zakład'}</b>` : ''}</div></div>`;
+}
 function renderMoje() {
   ensureMyFromBets();
   if (!lastEval) return `<div class="ban idle">Liczę…</div>`;
-  const out = lastEval.out, my = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0), myOn = my.filter(x => !myResult(x.g, out[x.k]));
-  if (!my.length) return `<div class="note"><b>MOJE</b> — nie grasz jeszcze żadnego modelu.<br>Na ekranie GRA dotknij kartę modelu → „▶ Gram ten model”.</div>` + betsSummary();
-  if (!my.some(x => x.k === selK)) { selK = (myOn[0] || my[0]).k; needLabels(); }
-  tabMine = true;
-  const h = `<div class="note"><b>W MOJE</b> — modele dodane do MOJE z tej aplikacji (${my.length}, w grze ${myOn.length}). Wszystkie moje gry ze wszystkich aplikacji: <a href="/moje/" style="color:var(--or);font-weight:800">⇢ otwórz MOJE</a></div>` + myCardsHtml(out, my, myOn, selK) + betsSummary() + `<div class="note" style="margin-top:4px">Tabela modelu <b>${mid(selK, P[selK])}</b> — dotknij innej karty wyżej, żeby zmienić model.</div>` + renderTab();
-  tabMine = false;
-  return h;
+  tabScroll = false;
+  const out = lastEval.out, n = codes.length, A = getMy().map(g => ({ g, k: myIndex(g) })).filter(x => x.k >= 0).map(x => Object.assign(x, { r: out[x.k], res: myResult(x.g, out[x.k]) }));
+  if (!A.length) return `<div class="note"><b>W MOJE</b> — nie grasz jeszcze żadnego modelu z tej aplikacji.<br>Na ekranie GRA dotknij kartę modelu → „▶ Gram ten model”.</div>`;
+  const gra = A.filter(x => !x.res && x.r.ph === 2).sort((a, b) => a.r.wz - b.r.wz), wait = A.filter(x => !x.res && x.r.ph !== 2), done = A.filter(x => x.res).sort((a, b) => b.res.row - a.res.row), F = mfGet();
+  const sec = (key, title, L, open) => `<details class="msec" data-mf="${key}"${(F[key] === undefined ? open : F[key]) ? ' open' : ''}><summary>${title} · ${L.length}</summary>` +
+    (L.length ? L.map(x => myTile(x.k, x.r, x.res) + (x.res ? `<button class="btn more" data-stop="${esc(specKey(x.g.m))}" style="margin:-2px 0 8px">usuń ${mid(x.k, P[x.k])} z MOJE GRY</button>` : '')).join('') : `<div class="hint" style="padding:4px 2px">Żaden model nie gra teraz na następnym wierszu ani nie ma ustawionego zakładu.</div>`) + `</details>`;
+  return `<div class="note"><b>W MOJE</b> — modele dodane do MOJE z tej aplikacji. Dotknij → statystyki · przytrzymaj → tabela. Wszystkie moje gry: <a href="/moje/" style="color:var(--or);font-weight:800">⇢ otwórz MOJE</a></div>` +
+    sec('gra', '▶ W GRZE', gra, 1) + (wait.length ? sec('wait', '🟦 CZEKAJĄ', wait, 1) : '') + (done.length ? sec('done', '✅ ZAKOŃCZONE', done, 0) : '');
 }
 function renderTab() {
   const n = codes.length;
@@ -1508,7 +1521,7 @@ function render() {
   const el = $('main');
   el.innerHTML = view === 'gra' ? renderGra() : view === 'tab' ? renderTab() : view === 'moje' ? renderMoje() : renderUst();
   const hm = $('hdrModel');   // opis modelu w nagłówku (TABELA / MOJE)
-  if (hm) { const m = (view === 'tab' || view === 'moje') && selK !== null && P[selK] && !(view === 'moje' && !getMy().length) ? P[selK] : null;
+  if (hm) { const m = view === 'tab' && selK !== null && P[selK] ? P[selK] : null;   // W MOJE: same kafelki, bez opisu modelu
     hm.innerHTML = m ? `<b>${mid(selK, m)}</b> · ${esc(ruleTxt(m))}<span class="mh">dotknij wiersz → łańcuch STEP/TRIGGER · przytrzymaj → statystyki</span>` : ''; }
   try { document.documentElement.style.setProperty('--hdrH', document.querySelector('header').offsetHeight + 'px'); } catch (e) {}
   const nm = $('navMine'); if (nm) {   // MOJE: model z zakładem na następnym wierszu → przycisk świeci, dopóki nie wejdziesz w MOJE

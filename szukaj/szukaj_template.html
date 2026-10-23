@@ -436,7 +436,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.18.7';
+const APP_VER = '1.18.8';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -446,6 +446,15 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch
 const $ = id => document.getElementById(id);
 
 // ---- kody: seed + wspólne z RAZEM (ten sam klucz pamięci) ----
+// skąd kod: wspólny dziennik „codesrc_v1_t50 / _t60” (wszystkie aplikacje na px5060.github.io) — {i: numer w dopisanych kodach, c: kod, a: aplikacja, t: czas}; MOJE pokazuje znaczek aplikacji przy ostatnim kodzie
+function codeSrcLog(t, oldS, newS, a) {
+  if (!newS || newS.length <= oldS.length || newS.indexOf(oldS) !== 0) return;
+  const k = 'codesrc_v1_' + t; let L; try { L = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { L = []; } if (!Array.isArray(L)) L = [];
+  const now = Date.now(); for (let j = oldS.length; j + 3 <= newS.length; j += 3) L.push({ i: j / 3, c: newS.substr(j, 3), a, t: now });
+  try { localStorage.setItem(k, JSON.stringify(L.slice(-300))); } catch (e) {}
+}
+const SRC_LAB = 'L' + CFG.app.slice(1);   // znaczek tej aplikacji w dzienniku kodów
+function saveAdded(s) { const o = readAdded(), ok = lsSet(CFG.seedKey, s); if (ok) codeSrcLog(CFG.app, o, s, SRC_LAB); return ok; }
 function readAdded() { const s = lsGet(CFG.seedKey, ''); return /^(\d{3})*$/.test(s) ? s : ''; }
 let addedStr = readAdded();
 let codes = [];
@@ -725,7 +734,7 @@ function addCode() {
   if (!AL.includes(c)) return toast(`Kod ${c} nie występuje w tym ciągu`);
   const bets = busy ? [] : betsOnNextRow(), row = codes.length;   // kto gra na wierszu, który właśnie wpisujesz
   addedStr = readAdded() + c;             // czytaj-zmień-zapisz: nie gubi kodów wpisanych w RAZEM
-  if (!lsSet(CFG.seedKey, addedStr)) alert('BŁĄD zapisu pamięci telefonu!');
+  if (!saveAdded(addedStr)) alert('BŁĄD zapisu pamięci telefonu!');
   pendingPop = bets.length ? { row, list: bets } : null;
   $('codeIn').value = ''; rebuildCodes(); recompute(); toast(`Dodano ${c} jako Nr ${codes.length}`);
 }
@@ -734,7 +743,7 @@ function undo() {
   if (!addedStr.length) return toast('Brak dopisanych kodów do cofnięcia');
   const c = addedStr.slice(-3);
   if (!confirm(`Cofnąć ostatni kod ${c} (Nr ${codes.length})? Zniknie też z ${CFG.razem}.`)) return;
-  addedStr = addedStr.slice(0, -3); lsSet(CFG.seedKey, addedStr); rebuildCodes(); recompute();
+  addedStr = addedStr.slice(0, -3); saveAdded(addedStr); rebuildCodes(); recompute();
 }
 $('addBtn').onclick = addCode; $('undoBtn').onclick = undo;
 $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') addCode(); });
@@ -756,7 +765,7 @@ function importCodes(text, fname) {
   const gain = arr.length - codes.length;
   if (!confirm(`Import ${fname}\n${kind ? 'rodzaj: ' + kind + ' · ' : ''}${arr.length} kodów\nzgodny z appką w Nr 1–${codes.length}\n\nDopisać ${gain} nowych kodów (Nr ${codes.length + 1}–${arr.length})?\nTrafią też do ${CFG.razem}.`)) return;
   addedStr = readAdded() + arr.slice(codes.length).join('');
-  if (!lsSet(CFG.seedKey, addedStr)) { alert('BŁĄD zapisu pamięci telefonu!'); return; }
+  if (!saveAdded(addedStr)) { alert('BŁĄD zapisu pamięci telefonu!'); return; }
   lsSet(LSK.imp, `${fname} · ${new Date().toLocaleString('pl-PL')} · n=${arr.length} · +${gain}`);
   rebuildCodes(); recompute(); toast(`Zaimportowano +${gain} kodów, teraz Nr ${codes.length}`);
 }

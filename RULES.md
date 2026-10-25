@@ -70,3 +70,4 @@ Zapisuje reguły i ustalenia z rozmów, żeby przetrwały streszczenie (kompakcj
 - Aplikacja działa bez internetu: najpierw sieć (świeża wersja), bez sieci kopia z pamięci telefonu.
 - Plik `szukaj-sw.js` jest w repo (już nie generuje go `build_szukaj.py`); kopia na plik bez `?nocache=`.
 - Ten sam wzór co ZESZYT i MOJE.
+- Po starcie zielony komunikat na 3,5 s: „✓ Pobrane — działa też bez internetu”, a bez sieci „📴 Bez internetu — działa z pamięci telefonu”.

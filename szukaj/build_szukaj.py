@@ -36,15 +36,7 @@ def main():
            'start_url': './', 'scope': './', 'display': 'standalone', 'orientation': 'portrait',
            'background_color': '#12151c', 'theme_color': '#1b1f2a',
            'icons': [{'src': f'szukaj-{n}.png', 'sizes': f'{n}x{n}', 'type': 'image/png', 'purpose': 'any'} for n in (192, 512)]}
-    # SW: nawigacje zawsze z sieci (bez starej wersji z pamięci)
-    (HERE.parent / 'szukaj-sw.js').write_text(
-        "// SZUKAJ BUST: nawigacje zawsze z sieci (bez starej wersji z pamięci)\n"
-        "self.addEventListener('install', () => self.skipWaiting());\n"
-        "self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));\n"
-        "self.addEventListener('fetch', e => {\n"
-        "  if (e.request.mode !== 'navigate') return;\n"
-        "  e.respondWith(fetch(e.request.url, { cache: 'no-store' }).catch(() => fetch(e.request)));\n"
-        "});\n")
+    # SW: offline — najpierw sieć, bez sieci kopia z pamięci (szukaj-sw.js w repo, nie generowany)
     (HERE.parent / 'szukaj.webmanifest').write_text(json.dumps(man, ensure_ascii=False, indent=1))
     print('zapisano ../index.html', len(html) // 1024, 'KB;', {t: len(p['pool']) for t, p in pools.items()})
 

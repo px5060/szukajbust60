@@ -65,3 +65,8 @@ Zapisuje reguły i ustalenia z rozmów, żeby przetrwały streszczenie (kompakcj
 - Przycisk w oknie statystyk SZUKAJ / SZUKAJ+ „⇢ Gram — dodaj do MOJE i otwórz” zastąpił dawne „Dodaj do RAZEM — zakładka SZUKAJ”.
 - Poza tym przyciskiem aplikacji źródłowych **nie zmieniamy** pod MOJE.
 - Wpis kodów w MOJE: przy każdej tabeli ostatni kod i kiedy wpisany („5 minut temu”, „2 dni temu”).
+
+## Offline (szukaj-sw.js)
+- Aplikacja działa bez internetu: najpierw sieć (świeża wersja), bez sieci kopia z pamięci telefonu.
+- Plik `szukaj-sw.js` jest w repo (już nie generuje go `build_szukaj.py`); kopia na plik bez `?nocache=`.
+- Ten sam wzór co ZESZYT i MOJE.

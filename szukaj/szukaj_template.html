@@ -1512,7 +1512,7 @@ function renderUst() {
     Domyślnie: do 200 cykli max 5 BUST, do 300 max 9, do 400 max 11, ponad 400 max 11 (★), min. ${CFG.minCyc} cykli, min. ${CFG.minBust} BUST-y
     (1–2 BUST-y mało mówią o powtórkach), BUST od razu po BUST-cie max ${CFG.maxClose}×. Mniej BUST-ów = rzadziej BUST; 0 powtórek = BUST nigdy nie przyszedł od razu po BUST-cie.</div></div>` + repHtml(true);
   h += `<div class="sec"><div class="sh"><b>Pula modeli (z chmury)</b><span class="m">ta sama na każdym urządzeniu</span></div>
-    <div class="kv"><span>modele w puli</span><b>${POOLS[tgt].pool.length.toLocaleString('pl')}</b><span>pula policzona na kodach do Nr</span><b>${POOLS[tgt].seedN.toLocaleString('pl')}</b><span>kody w appce teraz</span><b>${codes.length.toLocaleString('pl')}</b></div>
+    <div class="kv"><span>modele w puli</span><b>${POOLS[tgt].pool.length.toLocaleString('pl')}</b><span>pula policzona na kodach do Nr</span><b>${POOLS[tgt].seedN.toLocaleString('pl')}</b><span>kody w appce teraz</span><b>${codes.length.toLocaleString('pl')}</b>${POOLS[tgt].zmiana ? `<span>ostatnia zmiana puli</span><b>+${POOLS[tgt].zmiana.dodano.toLocaleString('pl')} / −${POOLS[tgt].zmiana.usunieto.toLocaleString('pl')}</b>` : ''}</div>
     <div class="hint">Szukanie modeli w telefonie jest wyłączone, żeby telefon, appka i PC pokazywały te same modele. Nowe kody i BUST-y liczą się od razu dla wszystkich modeli z puli.
     Pulę aktualizuje Claude w repo: wyślij mu eksport kodów z ${CFG.razem} — przeliczy miliony modeli na nowym ciągu i wyda nową wersję appki.</div>` +
     (f ? `<div class="hint" style="margin-top:6px">Na tym urządzeniu zostały modele znalezione kiedyś w appce (${f.toLocaleString('pl')}) — nie są już używane.</div><button class="btn" id="clrF" style="margin-top:6px">Usuń stare znalezione z tego urządzenia</button>` : '') + `</div>`;
@@ -1633,6 +1633,18 @@ async function checkVersion() {
     }
   } catch (e) {}
 }
+// nowa pula (odświeżenie co 200 kodów): raz na urządzeniu pasek — ile modeli dodano, ile usunięto (POOLS[cel].zmiana z przytnij.py)
+(function pulaInfo() {
+  const Z = CFG.targets.map(t => [t, POOLS[t].zmiana]).filter(([, z]) => z && (z.dodano || z.usunieto)), k = 'pula_v1' + location.pathname;
+  if (!Z.length) return;
+  const sig = Z.map(([t, z]) => `${t}:${POOLS[t].seedN}:${z.dodano}:${z.usunieto}`).join('|');
+  try { if (localStorage.getItem(k) === sig) return; } catch (e) { return; }
+  const d = document.createElement('div'); d.className = 'upd'; d.id = 'pulaBan';
+  d.innerHTML = `📦 Nowa pula modeli (kody do Nr ${POOLS[Z[0][0]].seedN.toLocaleString('pl')}): ` + Z.map(([t, z]) => `${CFG.targets.length > 1 ? t + ': ' : ''}<b>dodano ${z.dodano.toLocaleString('pl')}</b>${z.dodano && z.od ? ` (od P${z.od})` : ''}, <b>usunięto ${z.usunieto.toLocaleString('pl')}</b>`).join(' · ')
+    + '. Usunięte nie spełniały kryteriów; Twoje MOJE GRY i numery P bez zmian. Stuknij, żeby zamknąć.';
+  d.onclick = () => { try { localStorage.setItem(k, sig); } catch (e) {} d.remove(); };
+  $('hint').after(d);
+})();
 checkVersion(); document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
 </script>
 <script>

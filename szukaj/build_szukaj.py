@@ -24,7 +24,7 @@ def main():
             assert p['seedN'] <= len(seed + dop) // 3
         else:   # dopisane.txt jest lokalny (.gitignore) — na czystym klonie tylko uwaga
             print(f"uwaga: pula {t} liczona do Nr {p['seedN']}, baza ma {len(seed) // 3} kodów (brak dopisane.txt)")
-        pools[t] = {'seedN': p['seedN'], 'nCfg': p.get('nCfg', 0), 'pool': p['pool'], **({'nr': p['nr']} if p.get('nr') else {})}   # nr: numery P po przycięciu puli
+        pools[t] = {'seedN': p['seedN'], 'nCfg': p.get('nCfg', 0), 'pool': p['pool'], **({'nr': p['nr']} if p.get('nr') else {}), **({'zmiana': p['zmiana']} if p.get('zmiana') else {})}   # nr: numery P po przycięciu puli
         tests[t] = p.get('test', [])
         rules, minc, extra = p['rules'], p['minCyc'], {k: p[k] for k in ('minBust', 'maxClose', 'gap', 'split')}
     cfg = {k: a[k] for k in ('app', 'seedKey', 'razem', 'targets', 'alph', 'first', 'maxUnion', 'seedFix', 'razemUrl')}

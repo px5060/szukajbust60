@@ -16,11 +16,15 @@ def main():
     name = sys.argv[1]
     a = APPS[name]
     seed = re.sub(r'\D', '', (HERE / f'seed_{name}.txt').read_text())   # baza = MASTER_SEED appki RAZEM (od Nr 1)
+    dop = re.sub(r'\D', '', (HERE / 'dopisane.txt').read_text()) if (HERE / 'dopisane.txt').exists() else ''
     pools, tests = {}, {}
     for t in a['targets']:
         p = json.loads((HERE / f'pool_{name}_{t}.json').read_text())
-        assert p['seedN'] <= len(seed) // 3
-        pools[t] = {'seedN': p['seedN'], 'nCfg': p.get('nCfg', 0), 'pool': p['pool']}
+        if dop or p['seedN'] <= len(seed) // 3:   # pula liczona najwyżej na bazie + dopisane.txt (kody z telefonu po bazie)
+            assert p['seedN'] <= len(seed + dop) // 3
+        else:   # dopisane.txt jest lokalny (.gitignore) — na czystym klonie tylko uwaga
+            print(f"uwaga: pula {t} liczona do Nr {p['seedN']}, baza ma {len(seed) // 3} kodów (brak dopisane.txt)")
+        pools[t] = {'seedN': p['seedN'], 'nCfg': p.get('nCfg', 0), 'pool': p['pool'], **({'nr': p['nr']} if p.get('nr') else {}), **({'zmiana': p['zmiana']} if p.get('zmiana') else {})}   # nr: numery P po przycięciu puli
         tests[t] = p.get('test', [])
         rules, minc, extra = p['rules'], p['minCyc'], {k: p[k] for k in ('minBust', 'maxClose', 'gap', 'split')}
     cfg = {k: a[k] for k in ('app', 'seedKey', 'razem', 'targets', 'alph', 'first', 'maxUnion', 'seedFix', 'razemUrl')}

@@ -436,7 +436,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.18.10';
+const APP_VER = '1.18.11';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -565,7 +565,8 @@ function ruleTxt(m) {
 }
 // nazwa na ekranie: numer + cel zakładu (te same numery P… są w każdej puli celu, np. P2508 x1x ≠ P2508 xx1); mid0 = zapisywany identyfikator
 function mid(k, m) { return mid0(k, m) + ' · ' + tgt; }
-function mid0(k, m) { return (k < POOLS[tgt].pool.length ? 'P' : 'N') + (k < POOLS[tgt].pool.length ? k + 1 : k - POOLS[tgt].pool.length + 1); }
+const pnr = k => POOLS[tgt].nr ? POOLS[tgt].nr[k] : k + 1;   // numer P modelu z puli: po przycięciu puli (nr) numery się nie przesuwają
+function mid0(k, m) { return (k < POOLS[tgt].pool.length ? 'P' : 'N') + (k < POOLS[tgt].pool.length ? pnr(k) : k - POOLS[tgt].pool.length + 1); }
 
 // ---- worker ----
 const WURL = URL.createObjectURL(new Blob([$('wsrc').textContent], { type: 'text/javascript' })), W = new Worker(WURL);
@@ -1478,9 +1479,9 @@ function stepSpace() {   // ta sama przestrzeń co szukaj/search.py
 }
 // ---- szukanie modelu po nazwie (P123): ta sama pula z chmury = te same nazwy na każdym urządzeniu ----
 let findQ = '';
-function findModel(q) { const m = /^\s*[pP]?\s*(\d+)\s*(?:·?\s*(?:x1x|xx1|1xx))?\s*$/i.exec(q || ''); if (!m) return -1; const k = +m[1] - 1; return k >= 0 && k < POOLS[tgt].pool.length ? k : -2; }
+function findModel(q) { const m = /^\s*[pP]?\s*(\d+)\s*(?:·?\s*(?:x1x|xx1|1xx))?\s*$/i.exec(q || ''); if (!m) return -1; const k = POOLS[tgt].nr ? POOLS[tgt].nr.indexOf(+m[1]) : +m[1] - 1; return k >= 0 && k < POOLS[tgt].pool.length ? k : -2; }
 function findHtml() {
-  const n = POOLS[tgt].pool.length;
+  const n = POOLS[tgt].nr ? POOLS[tgt].nr[POOLS[tgt].nr.length - 1] : POOLS[tgt].pool.length;   // najwyższy numer P
   let h = `<div class="sec"><div class="sh"><b>Znajdź model po nazwie</b><span class="m">BET ${tgt} · P1–P${n}</span></div>
     <div class="selrow"><input id="findIn" placeholder="np. P123" value="${esc(findQ)}" autocomplete="off" autocapitalize="characters"><button class="btn pri" id="findBtn">Znajdź</button></div>`;
   if (findQ) {

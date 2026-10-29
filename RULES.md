@@ -71,3 +71,6 @@ Zapisuje reguły i ustalenia z rozmów, żeby przetrwały streszczenie (kompakcj
 - Plik `szukaj-sw.js` jest w repo (już nie generuje go `build_szukaj.py`); kopia na plik bez `?nocache=`.
 - Ten sam wzór co ZESZYT i MOJE.
 - Po starcie zielony komunikat na 3,5 s: „✓ Pobrane — działa też bez internetu”, a bez sieci „📴 Bez internetu — działa z pamięci telefonu”.
+
+## Kwadraciki ostatnich cykli w statystykach
+- 1. dotknięcie powiększa, 2. pokazuje, co było po takim wyniku: ile razy W1, W2… i BUST/LOST w następnym cyklu (z całej historii modelu) i kolejno ostatnie — jak w ZESZYCIE.

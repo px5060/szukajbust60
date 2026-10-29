@@ -66,6 +66,10 @@ main{padding:10px 12px 90px;max-width:760px;margin:0 auto}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:13px;margin-top:8px}
 .stats .k{color:var(--mu)}.stats .v{font-weight:700;text-align:right}.stats .v .n{font-weight:500;color:var(--mu);font-size:12px;display:block}.stats b.bad{color:var(--rd)}.stats b.ok{color:var(--gr)}
 .seq{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}.seq i{font-style:normal;font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 5px;background:#C6EFCE;color:#006100}.seq i.b{background:#FF6666;color:#fff}
+/* kwadraciki ostatnich cykli (2 dotknięcia → co było po takim wyniku) */
+.seq.sqk i{cursor:pointer;transition:transform .15s;position:relative}.seq.sqk i.big{transform:scale(1.5);z-index:3;box-shadow:0 3px 10px rgba(0,0,0,.5)}
+.seqpo{font-size:12.5px;color:var(--mu,#8b93a7);margin-top:8px;line-height:1.5}.seqpo b{color:var(--tx,#e8ebf2)}.seqpo .roz{display:flex;flex-wrap:wrap;gap:6px 12px;margin:5px 0}.seqpo .roz span{font-weight:800;color:var(--tx,#e8ebf2)}
+.seqpo i{font-style:normal;font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 5px;background:#C6EFCE;color:#006100;margin-right:3px}.seqpo i.b{background:#FFC7CE;color:#9C0006}.seqpo .sq2{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
 .btn.play{display:block;width:100%;margin-top:8px;background:var(--btn);border-color:var(--btn);color:var(--btntx);font-size:15px}
 .btn.playing{display:block;width:100%;margin-top:8px;background:#2b3245}
 .mini{background:var(--card);border-radius:7px;padding:6px 9px;margin-bottom:4px;font-size:12.5px;color:#c9cfdc;cursor:pointer}
@@ -436,7 +440,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.18.11';
+const APP_VER = '1.19.0';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -1267,9 +1271,29 @@ function ocRowHtml() {
   return h + `<div class="hint" style="margin:0 2px 6px">${ocInfo.done < ocInfo.tot ? `oceniam modele z listy: <b>${ocInfo.done}/${ocInfo.tot}</b>… · ` : ''}${nm} — tylko ${OCF.lv.join(' i ') || '— wybierz GRAĆ / OBSERWUJ'}, od najwyższej punktacji (pkt z 9, jak w statystykach)</div>`;
 }
 function ocTag(k) { if (!ocInfo || !ocInfo.S.has(k)) return ''; const s = ocInfo.S.get(k), v = ocVerd(s); return ` <span class="ocb ${v === 'GRAĆ' ? 'g' : v === 'OBSERWUJ' ? 'o' : ''}">${v} ${Math.max(s, 0)}/9</span>`; }
+// ===== kwadraciki ostatnich cykli: 1. dotknięcie powiększa, 2. pokazuje, co było po takim wyniku (ile razy W1, W2… / BUST) — jak w ZESZYCIE =====
+let SEQ = [];   // wyniki wszystkich cykli wybranego modelu: krok WIN, 9 = BUST
+const seqTx = v => v === 9 ? 'BUST' : 'W' + v, seqI = v => `<i${v === 9 ? ' class="b"' : ''}>${seqTx(v)}</i>`;
+function seqPo(v) {
+  const nx = [], cnt = {}, ile = SEQ.filter(x => x === v).length;
+  SEQ.forEach((x, i) => { if (x === v && i + 1 < SEQ.length) nx.push(SEQ[i + 1]); });
+  if (!nx.length) return `<b>Po ${seqTx(v)}</b>: to był ostatni cykl — następnego jeszcze nie było.`;
+  nx.forEach(x => { cnt[x] = (cnt[x] || 0) + 1; });
+  const roz = Object.entries(cnt).map(([k, c]) => [+k, c]).sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+  return `<b>Po ${seqTx(v)}</b> (${ile}× w historii${ile > nx.length ? ', ostatni jeszcze bez następnego' : ''}) następny cykl — najczęściej:`
+    + `<div class="roz">${roz.map(([k, c]) => `<span>${seqI(k)}× ${c}</span>`).join('')}</div>kolejno (ostatnie, od najstarszego):<div class="sq2">${nx.slice(-15).map(seqI).join('')}</div>`;
+}
+document.addEventListener('click', e => {
+  const q = e.target.closest('.seq.sqk i[data-si]'); if (!q) return;
+  const v = SEQ[+q.dataset.si], box = q.parentNode.nextElementSibling; if (v == null || !box) return;
+  if (!q.classList.contains('big')) { q.parentNode.querySelectorAll('.big').forEach(x => x.classList.remove('big')); q.classList.add('big');
+    box.innerHTML = `<b>${seqTx(v)}</b> — dotknij jeszcze raz: jak układały się następne cykle po ${seqTx(v)}.`; return; }
+  box.innerHTML = seqPo(v);
+});
 function statsHtml(r) {
   if (!lab) return '';
   const S = modelStats(), n = codes.length;
+  SEQ = S.ends.map(e => e[0] === 1 ? e[2] : 9);
   const lb = S.lastBRow === null ? '<b class="ok">nie było BUST</b>' : `<b>${S.sinceB} cykli temu</b><span class="n">w.${S.lastBRow + 1} · ${n - 1 - S.lastBRow} kodów temu</span>`;
   const two = r && r.pb ? `<b class="bad">${r.pb}×${S.twoRow.length ? ` (ostatnio w.${S.twoRow[S.twoRow.length - 1] + 1})` : ''}</b>` : '<b class="ok">ani razu</b>';
   const row = (k, v) => `<span class="k">${k}</span><div class="v">${v}</div>`;
@@ -1291,7 +1315,7 @@ function statsHtml(r) {
     ${row('WIN na krokach k1…k8', `<b>${S.wk.slice(1).join(' · ')}</b>`)}
     ${row('bilans modelu (K8 od k1)', `<b class="${r && r.pnl >= 0 ? 'ok' : 'bad'}">${r ? (r.pnl >= 0 ? '+' : '') + r.pnl + ' zł' : ''}</b>`)}
   </div>${r ? checkTxt(r) : ''}<div class="hint" style="margin-top:6px">Ostatnie ${S.last.length} cykli (najnowszy z prawej):</div>
-  <div class="seq">${S.last.map(e => e[0] === 1 ? `<i>W${e[2]}</i>` : '<i class="b">BUST</i>').join('')}</div>
+  <div class="seq sqk">${S.last.map((e, j) => `<i${e[0] === 1 ? '' : ' class="b"'} data-si="${S.ends.length - S.last.length + j}">${e[0] === 1 ? 'W' + e[2] : 'BUST'}</i>`).join('')}</div><div class="seqpo">Dotknij kwadracika — powiększy się; dotknij go jeszcze raz — zobaczysz, co było po takim wyniku (ile razy W1, W2… i BUST).</div>
   <div class="bbox"><h4>BANK +3 / +5 <span class="n">(stawki 8 · 8 · 16 · 32 · 64 · 128 · 256 · 512 zł, dalej ×2)</span></h4>${[[3, O.b3], [5, O.b5]].map(([w, o]) => `<div class="bh">BANK +${w}</div><div class="stats">
     ${row(`zamknięte w k1–${w}`, bk(o, w))}
     ${row(`ocena BANK +${w} (pkt z 9)`, oc(o))}

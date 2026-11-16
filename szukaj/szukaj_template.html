@@ -440,7 +440,7 @@ onmessage = e => {
 const CFG = __CFG__;            // {app, seedKey, razem, targets:[...], defRules, minCyc, minBust, maxClose, gap, split, test}
 const MASTER_SEED = '__SEED__';
 const POOLS = __POOLS__;        // {x1x:{seedN,test,pool:[[typ,STEP,x,TRIG,off]...]}, ...}
-const APP_VER = '1.19.0';
+const APP_VER = '1.19.1';
 const SEED_N = MASTER_SEED.length / 3;
 const AL = CFG.alph, TPOS = { x1x: 1, xx1: 2, '1xx': 0 };
 const LSK = { my: CFG.app + '_szbust_v1_moje_', bands: CFG.app + '_szbust_v1_bands', imp: CFG.app + '_szbust_v1_lastimp', found: CFG.app + '_szbust_v1_found_', rules: CFG.app + '_szbust_v1_rules', tgt: CFG.app + '_szbust_v1_tgt', ks: CFG.app + '_szbust_v1_ks' };
@@ -1549,8 +1549,19 @@ function renderUst() {
   h += `<div class="note">SZUKAJ BUST ${APP_VER} · ${CFG.razem}: klucz kodów <b>${CFG.seedKey}</b>. Pulę (miliony przeszukanych modeli) liczy skrypt <b>szukaj/search.py</b> w repo. Modele w MOJE / znalezione są osobne od SZUKAJ.</div>`;
   return h;
 }
+// przypomnienie: pula modeli liczona do Nr seedN — po 200 nowych kodach pasek „czas odświeżyć pulę” (stuknięcie chowa go do następnych 50 kodów)
+const PULA_CO = 200;
+function pulaRem() {
+  const old = $('pulaRem'), n = codes.length, sN = POOLS[tgt].seedN, k = 'pularem_v1' + location.pathname + tgt; let hid = 0;
+  try { hid = +localStorage.getItem(k) || 0; } catch (e) {}
+  if (n - sN < PULA_CO || n < hid) { if (old) old.remove(); return; }
+  const d = old || document.createElement('div'); d.className = 'upd'; d.id = 'pulaRem'; d.style.background = '#a0521a';
+  d.innerHTML = `⏰ Czas odświeżyć pulę modeli (BET ${tgt}): policzona na kodach do Nr ${sN.toLocaleString('pl')}, od tego czasu <b>+${(n - sN).toLocaleString('pl')} kodów</b>. Napisz do Claude: <b>„odśwież pule”</b>. Stuknij, żeby schować.`;
+  d.onclick = () => { try { localStorage.setItem(k, String(codes.length + 50)); } catch (e) {} d.remove(); };
+  if (!old) $('hint').after(d);
+}
 function render() {
-  nextBtnUpd();
+  nextBtnUpd(); try { pulaRem(); } catch (e) {}
   $('hdrN').textContent = `Nr ${codes.length.toLocaleString('pl')} · BET ${tgt}`;
   const el = $('main');
   el.innerHTML = view === 'gra' ? renderGra() : view === 'tab' ? renderTab() : view === 'moje' ? renderMoje() : renderUst();
